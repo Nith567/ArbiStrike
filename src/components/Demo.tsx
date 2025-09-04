@@ -323,209 +323,176 @@ export default function Demo(
         paddingRight: context?.client.safeAreaInsets?.right ?? 0,
       }}
     >
-      <div className="w-[300px] mx-auto py-2 px-2">
-        <h1 className="text-2xl font-bold text-center mb-4">{title}</h1>
+      <div className="w-[300px] mx-auto py-4 px-4">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold mb-2">🚀 ZTyping Space Game</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Type fast, destroy aliens, reach the stars!
+          </p>
+        </div>
 
-        <div className="mb-4">
-          <h2 className="font-2xl font-bold">Context</h2>
-          <button
-            onClick={toggleContext}
-            className="flex items-center gap-2 transition-colors"
+        {/* Main Game Section */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
+          <div className="text-center mb-4">
+            <h2 className="text-lg font-semibold mb-2">🎮 Play ZTyping Game</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+              Epic space typing shooter with increasing difficulty
+            </p>
+          </div>
+          
+          <Button 
+            onClick={() => window.location.href = '/ztype'} 
+            className="w-full mb-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
           >
-            <span
-              className={`transform transition-transform ${isContextOpen ? "rotate-90" : ""
-                }`}
-            >
-              ➤
-            </span>
-            Tap to expand
-          </button>
+            🚀 Launch Game
+          </Button>
 
-          {isContextOpen && (
-            <div className="p-4 mt-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                {safeJsonStringify(context)}
-              </pre>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h2 className="font-2xl font-bold">Actions</h2>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.experimental.quickAuth
-              </pre>
-            </div>
-            <QuickAuth setToken={setToken} token={token} />
-          </div>
-
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.openMiniApp
-              </pre>
-            </div>
-            <OpenMiniApp />
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.close
-              </pre>
-            </div>
-            <Button onClick={close}>Close Frame</Button>
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                Navigate to ZType Game
-              </pre>
-            </div>
-            <Button onClick={() => window.location.href = '/ztype'}>
-              🎮 Play ZType Game
-            </Button>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <h2 className="font-2xl font-bold">Last event</h2>
-
-          <div className="p-4 mt-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-              {lastEvent || "none"}
-            </pre>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="font-2xl font-bold">Add to client & notifications</h2>
-
-          <div className="mt-2 mb-4 text-sm">
-            Client fid {context?.client.clientFid},
-            {added ? " frame added to client," : " frame not added to client,"}
-            {notificationDetails
-              ? " notifications enabled"
-              : " notifications disabled"}
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.addFrame
-              </pre>
+          {/* Add Frame to Client */}
+          <div className="border-t pt-3">
+            <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+              Subscribe for game updates & leaderboards
             </div>
             {addFrameResult && (
-              <div className="mb-2 text-sm">
-                Add frame result: {addFrameResult}
+              <div className="mb-2 text-xs p-2 bg-green-50 dark:bg-green-900 rounded border text-green-700 dark:text-green-300">
+                ✅ {addFrameResult}
               </div>
             )}
-            <Button onClick={addFrame} disabled={added}>
-              Add frame to client
+            <Button 
+              onClick={addFrame} 
+              disabled={added}
+              className="w-full text-xs"
+            >
+              {added ? "✅ Subscribed to Updates" : "🔔 Subscribe to Game Updates"}
             </Button>
-          </div>
-
-          {sendNotificationResult && (
-            <div className="mb-2 text-sm">
-              Send notification result: {sendNotificationResult}
-            </div>
-          )}
-          <div className="mb-4">
-            <Button onClick={sendNotification} disabled={!notificationDetails}>
-              Send notification
-            </Button>
+            
+            {/* Commented notification send */}
+            {/* {notificationDetails && (
+              <Button 
+                onClick={sendNotification} 
+                className="w-full mt-2 text-xs"
+                disabled={!notificationDetails}
+              >
+                📨 Test Notification
+              </Button>
+            )} */}
           </div>
         </div>
 
-        <div>
-          <h2 className="font-2xl font-bold">Ethereum</h2>
-
-          {address && (
-            <div className="my-2 text-xs">
-              Address: <pre className="inline">{truncateAddress(address)}</pre>
+        {/* Wallet Section */}
+        {address && (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+            <h3 className="font-semibold mb-3 text-sm">💳 Wallet Connected</h3>
+            <div className="text-xs space-y-2">
+              <div>
+                <span className="text-gray-600 dark:text-gray-400">Address:</span>
+                <div className="font-mono bg-white dark:bg-gray-700 p-1 rounded mt-1">
+                  {truncateAddress(address)}
+                </div>
+              </div>
+              {chainId && (
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Chain:</span>
+                  <div className="font-mono">{chainId}</div>
+                </div>
+              )}
             </div>
-          )}
-
-          {chainId && (
-            <div className="my-2 text-xs">
-              Chain ID: <pre className="inline">{chainId}</pre>
+            
+            <div className="mt-3 space-y-2">
+              <Button
+                onClick={() => isConnected ? disconnect() : connect({ connector: config.connectors[0] })}
+                className="w-full text-xs"
+              >
+                {isConnected ? "Disconnect" : "Connect Wallet"}
+              </Button>
             </div>
-          )}
-
-          <div className="mb-4">
-            <Button
-              onClick={() =>
-                isConnected
-                  ? disconnect()
-                  : connect({ connector: config.connectors[0] })
-              }
-            >
-              {isConnected ? "Disconnect" : "Connect"}
-            </Button>
           </div>
+        )}
 
-          <div className="mb-4">
-            <SignEthMessage />
+        {/* Web3 Actions */}
+        {isConnected && (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+            <h3 className="font-semibold mb-3 text-sm">⚡ Web3 Actions</h3>
+            <div className="space-y-2">
+              <Button
+                onClick={handleSwitchChain}
+                disabled={isSwitchChainPending}
+                isLoading={isSwitchChainPending}
+                className="w-full text-xs"
+              >
+                Switch to {nextChain.name}
+              </Button>
+              
+              <Button
+                onClick={signTyped}
+                disabled={!isConnected || isSignTypedPending}
+                isLoading={isSignTypedPending}
+                className="w-full text-xs"
+              >
+                Sign Typed Data
+              </Button>
+              
+              <SendEth />
+              
+              <Button
+                onClick={sendTx}
+                disabled={!isConnected || isSendTxPending}
+                isLoading={isSendTxPending}
+                className="w-full text-xs"
+              >
+                Send Transaction
+              </Button>
+              
+              <TestBatchOperation />
+            </div>
+            
+            {/* Transaction Status */}
+            {txHash && (
+              <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900 rounded text-xs">
+                <div className="font-semibold text-blue-700 dark:text-blue-300">Transaction:</div>
+                <div className="font-mono">{truncateAddress(txHash)}</div>
+                <div className="text-blue-600 dark:text-blue-400">
+                  {isConfirming ? "Confirming..." : isConfirmed ? "Confirmed!" : "Pending"}
+                </div>
+              </div>
+            )}
+            
+            {/* Errors */}
+            {isSendTxError && (
+              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
+                {renderError(sendTxError)}
+              </div>
+            )}
+            {isSignTypedError && (
+              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
+                {renderError(signTypedError)}
+              </div>
+            )}
+            {isSwitchChainError && (
+              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
+                {renderError(switchChainError)}
+              </div>
+            )}
           </div>
+        )}
 
-          {isConnected && (
-            <>
-              <div className="mb-4">
-                <SendEth />
-              </div>
-              <div className="mb-4">
-                <Button
-                  onClick={sendTx}
-                  disabled={!isConnected || isSendTxPending}
-                  isLoading={isSendTxPending}
-                >
-                  Send Transaction (contract)
-                </Button>
-                {isSendTxError && renderError(sendTxError)}
-                {txHash && (
-                  <div className="mt-2 text-xs">
-                    <div>Hash: {truncateAddress(txHash)}</div>
-                    <div>
-                      Status:{" "}
-                      {isConfirming
-                        ? "Confirming..."
-                        : isConfirmed
-                          ? "Confirmed!"
-                          : "Pending"}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="mb-4">
-                <Button
-                  onClick={signTyped}
-                  disabled={!isConnected || isSignTypedPending}
-                  isLoading={isSignTypedPending}
-                >
-                  Sign Typed Data
-                </Button>
-                {isSignTypedError && renderError(signTypedError)}
-              </div>
-              <div className="mb-4">
-                <Button
-                  onClick={handleSwitchChain}
-                  disabled={isSwitchChainPending}
-                  isLoading={isSwitchChainPending}
-                >
-                  Switch to {nextChain.name}
-                </Button>
-                {isSwitchChainError && renderError(switchChainError)}
-              </div>
-              <div className="mb-4">
-                <TestBatchOperation />
-              </div>
-            </>
-          )}
+        {/* Game Stats / Last Event */}
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+          <h3 className="font-semibold mb-2 text-sm">📊 Game Events</h3>
+          <div className="text-xs">
+            <div className="font-mono p-2 bg-white dark:bg-gray-700 rounded">
+              {lastEvent || "No recent events"}
+            </div>
+          </div>
+        </div>
+
+        {/* Client Info */}
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+          <div>Client FID: {context?.client.clientFid}</div>
+          <div className="mt-1">
+            {added ? "🟢 Frame Added" : "⚪ Frame Not Added"} • 
+            {notificationDetails ? " 🔔 Notifications On" : " 🔕 Notifications Off"}
+          </div>
         </div>
       </div>
     </div>
