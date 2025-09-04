@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { cn } from "@/lib/utils"
-import { wordsEasy, wordsMedium, wordsHard } from "@/components/ztype/words"
-import { playShoot, playHit, playLose, initAudio } from "@/components/ztype/webaudio"
+import { cn } from "~/lib/utils"
+import { wordsEasy, wordsMedium, wordsHard } from "~/components/ztype/words"
+import { playShoot, playHit, playLose, initAudio } from "~/components/ztype/webaudio"
 
 type DifficultyKey = "easy" | "medium" | "hard"
 

@@ -20,4 +20,4 @@ export default function Page() {
 }
 
 // Note: importing at the end helps when the file is treated as a server component.
-import TypingGameAuto from "@/components/ztype/typing-game-auto"
+import TypingGameAuto from "~/components/ztype/typing-game-auto"
