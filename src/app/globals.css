@@ -1,5 +1,6 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
@@ -115,10 +116,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-* {
-  @apply border-border outline-ring/50;
-}
-
-body {
-  @apply bg-background text-foreground;
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
 }
