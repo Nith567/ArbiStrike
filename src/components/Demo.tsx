@@ -362,41 +362,6 @@ export default function Demo(
             <QuickAuth setToken={setToken} token={token} />
           </div>
 
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.composeCast
-              </pre>
-            </div>
-            <ComposeCastAction />
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.openUrl
-              </pre>
-            </div>
-            <Button onClick={openUrl}>Open Link</Button>
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.openUrl
-              </pre>
-            </div>
-            <Button onClick={openWarpcastUrl}>Open Warpcast Link</Button>
-          </div>
-
-          <div className="mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-                sdk.actions.viewProfile
-              </pre>
-            </div>
-            <ViewProfile />
-          </div>
 
           <div className="mb-4">
             <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
@@ -414,6 +379,17 @@ export default function Demo(
               </pre>
             </div>
             <Button onClick={close}>Close Frame</Button>
+          </div>
+
+          <div className="mb-4">
+            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg my-2">
+              <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
+                Navigate to ZType Game
+              </pre>
+            </div>
+            <Button onClick={() => window.location.href = '/ztype'}>
+              🎮 Play ZType Game
+            </Button>
           </div>
         </div>
 
@@ -551,24 +527,6 @@ export default function Demo(
             </>
           )}
         </div>
-
-        {solanaAddress && (
-          <div>
-            <h2 className="font-2xl font-bold">Solana</h2>
-            <div className="my-2 text-xs">
-              Address: <pre className="inline">{truncateAddress(solanaAddress)}</pre>
-            </div>
-            <div className="mb-4">
-              <SignSolanaMessage />
-            </div>
-            <div className="mb-4">
-              <SendSolana />
-            </div>
-            <div className="mb-4">
-              <SendTokenSolana />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -814,234 +772,7 @@ function SendTokenSolana() {
 
   const { connection: solanaConnection } = useSolanaConnection();
 
-  const handleApprove = useCallback(async () => {
-    if (!publicKey) {
-      throw new Error('no Solana publicKey');
-    }
 
-    if (!selectedSymbol || !associatedMapping) {
-      setState({ status: 'error', error: new Error('Please select a token to approve.') });
-      return;
-    }
-
-    if (!destinationAddress) {
-      setState({ status: 'error', error: new Error('Please enter a destination address.') });
-      return;
-    }
-
-    setState({ status: 'pending' });
-    try {
-      const { blockhash } = await solanaConnection.getLatestBlockhash();
-      if (!blockhash) {
-        throw new Error('Failed to fetch the latest Solana blockhash.');
-      }
-
-      const transaction = new SolanaTransaction();
-
-      const tokenMintPublicKey = new SolanaPublicKey(associatedMapping.token);
-      const spenderPublicKey = new SolanaPublicKey(destinationAddress);
-
-      // Calculate the amount to approve: 1000 tokens in smallest units
-      const amountToApprove = 1000;
-      const amountInSmallestUnit = BigInt(Math.round(amountToApprove * Math.pow(10, associatedMapping.decimals)));
-
-      if (amountInSmallestUnit <= 0) {
-        throw new Error("Calculated token amount to approve is zero or less. Check decimals and amount.");
-      }
-
-      // Get the owner's ATA for the token
-      const ownerAta = await getAssociatedTokenAddress(
-        tokenMintPublicKey,
-        publicKey,
-      );
-
-      // Add the approve instruction
-      transaction.add(
-        createApproveInstruction(
-          ownerAta,             // Token account to approve from
-          spenderPublicKey,     // Account authorized to transfer tokens
-          publicKey,            // Owner of the token account
-          amountInSmallestUnit  // Amount to approve in smallest units
-        )
-      );
-
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = new SolanaPublicKey(publicKey);
-
-      let finalTransaction: SolanaTransaction | VersionedTransaction = transaction;
-
-      if (useVersionedTransaction) {
-        // Create a v0 compatible message
-        const messageV0 = new TransactionMessage({
-          payerKey: publicKey,
-          recentBlockhash: blockhash,
-          instructions: transaction.instructions,
-        }).compileToV0Message();
-
-        // Create a new VersionedTransaction
-        finalTransaction = new VersionedTransaction(messageV0);
-        console.log('Created versioned transaction for approval');
-      }
-
-      console.log('Simulating approval transaction:', finalTransaction);
-      const signature = await sendTransaction(
-        finalTransaction,
-        solanaConnection,
-      );
-      setState({ status: 'success', signature, type: 'approve' });
-      console.log('Approval transaction successful, signature:', signature);
-
-    } catch (e) {
-      console.error("Approval transaction failed:", e);
-      if (e instanceof Error) {
-        setState({ status: 'error', error: e });
-      } else {
-        setState({ status: 'error', error: new Error(String(e)) });
-      }
-    }
-  }, [
-    publicKey,
-    sendTransaction,
-    selectedSymbol,
-    associatedMapping,
-    destinationAddress,
-    useVersionedTransaction,
-    solanaConnection,
-  ])
-
-  const handleSend = useCallback(async () => {
-    if (!publicKey) {
-      throw new Error('no Solana publicKey');
-    }
-
-    if (!selectedSymbol || !associatedMapping) {
-      setState({ status: 'error', error: new Error('Please select a token to send.') });
-      return;
-    }
-
-    setState({ status: 'pending' });
-    try {
-      const { blockhash } = await solanaConnection.getLatestBlockhash();
-      if (!blockhash) {
-        throw new Error('Failed to fetch the latest Solana blockhash.');
-      }
-
-      const transaction = new SolanaTransaction();
-
-      const tokenMintPublicKey = new SolanaPublicKey(associatedMapping.token);
-      const recipientPublicKey = new SolanaPublicKey(destinationAddress);
-
-      // Calculate the amount in the smallest unit of the token
-      // Sending 0.1 of the token
-      const amountToSend = 0.1;
-      const amountInSmallestUnit = BigInt(Math.round(amountToSend * Math.pow(10, associatedMapping.decimals)));
-
-      if (amountInSmallestUnit <= 0) {
-        throw new Error("Calculated token amount to send is zero or less. Check decimals and amount.");
-      }
-
-      // 1. Get the sender's ATA for the token
-      const fromAta = await getAssociatedTokenAddress(
-        tokenMintPublicKey,
-        publicKey,
-      );
-
-      // 2. Get the recipient's ATA for the token
-      const toAta = await getAssociatedTokenAddress(
-        tokenMintPublicKey,
-        recipientPublicKey,
-      );
-
-      // 3. Check if the recipient's ATA exists. If not, add an instruction to create it.
-      const toAtaAccountInfo = await solanaConnection.getAccountInfo(toAta);
-      if (!toAtaAccountInfo) {
-        console.log(`Recipient's Associated Token Account (${toAta.toBase58()}) for ${selectedSymbol} does not exist. Creating it.`);
-        transaction.add(
-          createAssociatedTokenAccountInstruction(
-            publicKey,
-            toAta,
-            recipientPublicKey,
-            tokenMintPublicKey
-            // TOKEN_PROGRAM_ID and ASSOCIATED_TOKEN_PROGRAM_ID are often defaulted by the library
-          )
-        );
-      }
-
-      // 4. Add the token transfer instruction
-      transaction.add(
-        createTransferCheckedInstruction(
-          fromAta,                // Source_associated_token_account
-          tokenMintPublicKey,     // Token mint_address
-          toAta,                  // Destination_associated_token_account
-          publicKey,              // Wallet address of the owner of the source account
-          amountInSmallestUnit,   // Amount, in smallest units (e.g., lamports for SOL, or smallest unit for the token)
-          associatedMapping.decimals // Decimals of the token (for validation)
-          // [],                  // Optional: multiSigners
-          // TOKEN_PROGRAM_ID     // Optional: SPL Token program ID, defaults correctly in recent library versions
-        )
-      );
-
-      // This is a SOL transfer, not a token transfer.
-      // To send SPL tokens, you'd use Token.createTransferInstruction from @solana/spl-token
-      // and need the sender's token account address and the recipient's token account address.
-      // The current code sends 0.000000001 SOL (1 lamport).
-      // If you intend to send SPL tokens (USDC, $TRUMP), this part needs to be changed significantly.
-
-      // For now, I'll keep the SOL transfer as in your original code,
-      // but highlight that this doesn't use the selected `associatedMapping` for token details.
-      // To send the selected token, you would use associatedMapping.token (mint address)
-      // and associatedMapping.decimals.
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = new SolanaPublicKey(publicKey);
-
-      let finalTransaction: SolanaTransaction | VersionedTransaction = transaction;
-
-      if (useVersionedTransaction) {
-        // Create a v0 compatible message
-        const messageV0 = new TransactionMessage({
-          payerKey: publicKey,
-          recentBlockhash: blockhash,
-          instructions: transaction.instructions,
-        }).compileToV0Message();
-
-        // Create a new VersionedTransaction
-        finalTransaction = new VersionedTransaction(messageV0);
-        console.log('Created versioned transaction');
-      }
-
-      console.log('Simulating transaction:', finalTransaction);
-      const simulation = await solanaConnection.simulateTransaction(
-        finalTransaction as VersionedTransaction
-      );
-      setSimulation(JSON.stringify(simulation.value));
-
-      const signature = await sendTransaction(
-        finalTransaction,
-        solanaConnection,
-      );
-      setState({ status: 'success', signature, type: 'send' });
-      console.log('Transaction successful, signature:', signature);
-
-    } catch (e) {
-      console.error("Transaction failed:", e);
-      if (e instanceof Error) {
-        setState({ status: 'error', error: e });
-      } else {
-        // Handle cases where e is not an Error instance (e.g., string or object)
-        setState({ status: 'error', error: new Error(String(e)) });
-      }
-      // Removed `throw e;` as it might cause unhandled promise rejection if not caught upstream.
-      // The state update is usually sufficient for UI feedback.
-    }
-  }, [
-    publicKey,
-    sendTransaction,
-    selectedSymbol,
-    associatedMapping,
-    destinationAddress,
-    useVersionedTransaction,
-    solanaConnection,
-  ]);
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-4"> {/* Added some basic styling for layout */}
@@ -1090,25 +821,6 @@ function SendTokenSolana() {
         </select>
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          onClick={handleSend}
-          disabled={state.status === 'pending' || !selectedSymbol} // Disable if no token selected or pending
-          isLoading={state.status === 'pending'}
-          className="flex-1" // Make button share width equally
-        >
-          Send Token {selectedSymbol ? `(0.1 ${selectedSymbol})` : ''}
-        </Button>
-
-        <Button
-          onClick={handleApprove}
-          disabled={state.status === 'pending' || !selectedSymbol} // Disable if no token selected or pending
-          isLoading={state.status === 'pending'}
-          className="flex-1" // Make button share width equally
-        >
-          Approve {selectedSymbol ? `(1000 ${selectedSymbol})` : ''}
-        </Button>
-      </div>
 
       {state.status === 'none' && !selectedSymbol && (
         <div className="mt-2 text-xs text-gray-500">Please select a token.</div>
@@ -1532,40 +1244,6 @@ function QuickAuth({ setToken, token }: { setToken: (token: string | null) => vo
   );
 }
 
-function ViewProfile() {
-  const [fid, setFid] = useState("3");
-
-  return (
-    <>
-      <div>
-        <Label
-          className="text-xs font-semibold text-gray-500 dark:text-gray-300 mb-1"
-          htmlFor="view-profile-fid"
-        >
-          Fid
-        </Label>
-        <Input
-          id="view-profile-fid"
-          type="number"
-          value={fid}
-          className="mb-2"
-          onChange={(e) => {
-            setFid(e.target.value);
-          }}
-          step="1"
-          min="1"
-        />
-      </div>
-      <Button
-        onClick={() => {
-          sdk.actions.viewProfile({ fid: parseInt(fid) });
-        }}
-      >
-        View Profile
-      </Button>
-    </>
-  );
-}
 
 function OpenMiniApp() {
   const [selectedUrl, setSelectedUrl] = useState("");
