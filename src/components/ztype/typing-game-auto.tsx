@@ -499,8 +499,8 @@ function TypingGameAuto() {
 
         {/* Game over/results overlay with Play Again */}
         {gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-            <div className="w-full max-w-md mx-auto px-6 py-6 rounded-lg border border-white/10 bg-black/50 backdrop-blur">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md mx-auto px-6 py-6 rounded-lg border border-white/10 bg-black/50 backdrop-blur max-h-full overflow-y-auto">
               <h3 className="text-center text-2xl font-semibold tracking-tight">Mission Report</h3>
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div className="border-t border-white/10 pt-3">
