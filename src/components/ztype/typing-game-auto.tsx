@@ -327,19 +327,20 @@ function TypingGameAuto() {
   const wave = Math.max(1, Math.floor(destroyed / 10) + 1) // simple wave metric
 
   return (
-    <div ref={wrapRef} className="relative w-full bg-black mx-auto max-w-md md:max-w-lg">
+    <div ref={wrapRef} className="relative w-full bg-black mx-auto max-w-md md:max-w-lg min-h-screen">
       <div
         ref={playRef}
         tabIndex={0}
         aria-label="Typing play area"
-        className="relative outline-none"
+        className="relative outline-none min-h-screen"
         style={{
           width: w,
-          height: h,
+          height: Math.max(h, window.innerHeight),
           margin: "0 auto",
           backgroundImage: `url('/space-starfield-nebula-dark.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          backgroundAttachment: "local",
         }}
         onMouseDown={focusPlay}
       >
@@ -531,9 +532,7 @@ function TypingGameAuto() {
                   <div className="font-mono text-xl">{finalErrors ?? 0}</div>
                 </div>
                 <div className="col-span-2 text-center text-xs text-white/50 mt-4">
-                  Score = Kills + (WPM × 10) + (Accuracy × 5) − (Errors × 4) + (Streak × 2) + (Destroyed × 1)
-                  <br />
-                  WPM = Words Destroyed ÷ Minutes | Accuracy = Correct Keystrokes ÷ Total Keystrokes
+                  Score = K + (WPM × 10) + (A × 5) − (E × 4) + (S × 2) + (D × 1)
                 </div>
               </div>
               <div className="mt-6 flex items-center justify-center gap-3">
