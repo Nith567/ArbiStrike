@@ -411,72 +411,17 @@ export default function Demo(
           </div>
         )}
 
-        {/* Web3 Actions */}
-        {isConnected && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-            <h3 className="font-semibold mb-3 text-sm">⚡ Web3 Actions</h3>
-            <div className="space-y-2">
-              <Button
-                onClick={handleSwitchChain}
-                disabled={isSwitchChainPending}
-                isLoading={isSwitchChainPending}
-                className="w-full text-xs"
-              >
-                Switch to {nextChain.name}
-              </Button>
-              
-              <Button
-                onClick={signTyped}
-                disabled={!isConnected || isSignTypedPending}
-                isLoading={isSignTypedPending}
-                className="w-full text-xs"
-              >
-                Sign Typed Data
-              </Button>
-              
-              <SendEth />
-              
-              <Button
-                onClick={sendTx}
-                disabled={!isConnected || isSendTxPending}
-                isLoading={isSendTxPending}
-                className="w-full text-xs"
-              >
-                Send Transaction
-              </Button>
-              
-              <TestBatchOperation />
+        {/* Context Display */}
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+          <h3 className="font-semibold mb-3 text-sm">📋 Context Data</h3>
+          <div className="text-xs">
+            <div className="font-mono p-3 bg-white dark:bg-gray-700 rounded max-h-64 overflow-y-auto">
+              <pre className="whitespace-pre-wrap break-words">
+                {context ? JSON.stringify(context, null, 2) : "Loading context..."}
+              </pre>
             </div>
-            
-            {/* Transaction Status */}
-            {txHash && (
-              <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900 rounded text-xs">
-                <div className="font-semibold text-blue-700 dark:text-blue-300">Transaction:</div>
-                <div className="font-mono">{truncateAddress(txHash)}</div>
-                <div className="text-blue-600 dark:text-blue-400">
-                  {isConfirming ? "Confirming..." : isConfirmed ? "Confirmed!" : "Pending"}
-                </div>
-              </div>
-            )}
-            
-            {/* Errors */}
-            {isSendTxError && (
-              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
-                {renderError(sendTxError)}
-              </div>
-            )}
-            {isSignTypedError && (
-              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
-                {renderError(signTypedError)}
-              </div>
-            )}
-            {isSwitchChainError && (
-              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-xs text-red-700 dark:text-red-300">
-                {renderError(switchChainError)}
-              </div>
-            )}
           </div>
-        )}
+        </div>
 
         {/* Game Stats / Last Event */}
         <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
