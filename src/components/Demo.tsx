@@ -135,16 +135,15 @@ export default function Demo(
     const load = async () => {
       const context = await sdk.context;
       setContext(context);
-      // Only consider subscribed if both frame is added AND notifications are enabled
-      setAdded(context.client.added && !!context.client.notificationDetails);
+      // Just check if frame is added, not requiring notifications
+      setAdded(context.client.added);
 
       sdk.on("miniAppAdded", ({ notificationDetails }) => {
         setLastEvent(
           `miniAppAdded${!!notificationDetails ? ", notifications enabled" : ""}`
         );
 
-        // Only mark as subscribed if notifications are actually enabled
-        setAdded(!!notificationDetails);
+        setAdded(true);
         if (notificationDetails) {
           setNotificationDetails(notificationDetails);
         }
@@ -167,6 +166,7 @@ export default function Demo(
       sdk.on("notificationsDisabled", () => {
         setLastEvent("notificationsDisabled");
         setNotificationDetails(null);
+        setAdded(false); // Mark as not subscribed when notifications are disabled
       });
 
       sdk.on("primaryButtonClicked", () => {
