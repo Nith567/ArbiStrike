@@ -135,14 +135,15 @@ export default function Demo(
     const load = async () => {
       const context = await sdk.context;
       setContext(context);
-      setAdded(context.client.added);
+      // Check if notifications are actually enabled, not just if frame is added
+      setAdded(!!context.client.notificationDetails);
 
       sdk.on("miniAppAdded", ({ notificationDetails }) => {
         setLastEvent(
           `miniAppAdded${!!notificationDetails ? ", notifications enabled" : ""}`
         );
 
-        setAdded(true);
+        setAdded(!!notificationDetails);
         if (notificationDetails) {
           setNotificationDetails(notificationDetails);
         }
