@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       notification: {
         title: "play the game",
         body: "play the ztype game",
-        target_url: "https://frames-v2-typing-game-4l9i.vercel.app/ztype",
+        target_url: "https://frames-v2-typing-game-4l9i.vercel.app",
         uuid: notificationUUID
       }
     };
