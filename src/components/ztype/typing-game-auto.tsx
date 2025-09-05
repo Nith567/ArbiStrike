@@ -498,52 +498,54 @@ function TypingGameAuto() {
 
         {/* Game over/results overlay with Play Again */}
         {gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-            <div className="w-full max-w-md mx-auto px-6 py-6 rounded-lg border border-white/10 bg-black/50 backdrop-blur">
-              <h3 className="text-center text-2xl font-semibold tracking-tight">Mission Report</h3>
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">Final Score</div>
-                  <div className="font-mono text-xl">{String(finalScore ?? score).padStart(6, "0")}</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md mx-auto max-h-full overflow-y-auto rounded-lg border border-white/10 bg-black/50 backdrop-blur">
+              <div className="px-6 py-6">
+                <h3 className="text-center text-2xl font-semibold tracking-tight">Mission Report</h3>
+                <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">Final Score</div>
+                    <div className="font-mono text-xl">{String(finalScore ?? score).padStart(6, "0")}</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">You Reached</div>
+                    <div className="font-mono text-xl">WAVE {String(wave).padStart(3, "0")}</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">Accuracy</div>
+                    <div className="font-mono text-xl">{accuracy}%</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">Typing Speed</div>
+                    <div className="font-mono text-xl">{finalWpm ?? 0} WPM</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">Words Destroyed</div>
+                    <div className="font-mono text-xl">{destroyed}</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-white/60">Longest Streak</div>
+                    <div className="font-mono text-xl">{longestStreak}</div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3 col-span-2">
+                    <div className="text-white/60">Errors</div>
+                    <div className="font-mono text-xl">{finalErrors ?? 0}</div>
+                  </div>
+                  <div className="col-span-2 text-center text-xs text-white/50">
+                    Score = Kills + (WPM × 10) + (Accuracy × 5) − (Errors × 4) + (Streak × 2) + (Destroyed × 1)
+                    <br />
+                    WPM = Words Destroyed ÷ Minutes | Accuracy = Correct Keystrokes ÷ Total Keystrokes
+                  </div>
                 </div>
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">You Reached</div>
-                  <div className="font-mono text-xl">WAVE {String(wave).padStart(3, "0")}</div>
+                <div className="mt-6 flex items-center justify-center gap-3">
+                  <button
+                    onClick={startGame}
+                    className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-medium"
+                    style={{ background: COLORS.accent, color: "#111" }}
+                  >
+                    Play again
+                  </button>
                 </div>
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">Accuracy</div>
-                  <div className="font-mono text-xl">{accuracy}%</div>
-                </div>
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">Typing Speed</div>
-                  <div className="font-mono text-xl">{finalWpm ?? 0} WPM</div>
-                </div>
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">Words Destroyed</div>
-                  <div className="font-mono text-xl">{destroyed}</div>
-                </div>
-                <div className="border-t border-white/10 pt-3">
-                  <div className="text-white/60">Longest Streak</div>
-                  <div className="font-mono text-xl">{longestStreak}</div>
-                </div>
-                <div className="border-t border-white/10 pt-3 col-span-2">
-                  <div className="text-white/60">Errors</div>
-                  <div className="font-mono text-xl">{finalErrors ?? 0}</div>
-                </div>
-                <div className="col-span-2 text-center text-xs text-white/50">
-                  Score = Kills + (WPM × 10) + (Accuracy × 5) − (Errors × 4) + (Streak × 2) + (Destroyed × 1)
-                  <br />
-                  WPM = Words Destroyed ÷ Minutes | Accuracy = Correct Keystrokes ÷ Total Keystrokes
-                </div>
-              </div>
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  onClick={startGame}
-                  className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-medium"
-                  style={{ background: COLORS.accent, color: "#111" }}
-                >
-                  Play again
-                </button>
               </div>
             </div>
           </div>
