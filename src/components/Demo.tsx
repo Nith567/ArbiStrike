@@ -1396,6 +1396,22 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
 
       // First create challenge in our database
+      console.log('=== DEBUG: Creating challenge ===');
+      console.log('creator (address):', address);
+      console.log('creatorFid:', context.user.fid);
+      console.log('selectedUser:', selectedUser);
+      console.log('selectedUser.verified_addresses:', selectedUser.verified_addresses);
+      console.log('selectedUser.custody_address:', selectedUser.custody_address);
+      
+      // Use the exact same logic that displays the address in the UI
+      const opponentAddress = selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address;
+      console.log('opponentAddress calculated as:', opponentAddress);
+      
+      // Validate opponent address
+      if (!opponentAddress || !opponentAddress.startsWith('0x')) {
+        throw new Error(`Invalid opponent address: ${opponentAddress}. User must have a verified Ethereum address.`);
+      }
+      
       const dbResponse = await fetch('/api/challenges/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1403,7 +1419,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           creator: address,
           creatorFid: context.user.fid,
           creatorName: context.user.displayName || context.user.username || 'Unknown',
-          opponent: selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address,
+          opponent: opponentAddress, // Use the same variable
           opponentFid: selectedUser.fid,
           opponentName: selectedUser.display_name || selectedUser.username || 'Unknown',
           betAmount: betAmount,
@@ -1428,7 +1444,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       const createChallengeData = encodeFunctionData({
         abi: parseAbi(['function createChallenge(uint256 challengeId, address opponent, uint256 betAmount)']),
         functionName: 'createChallenge',
-        args: [BigInt(challengeId), selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address, BigInt(betAmount)],
+        args: [BigInt(challengeId), opponentAddress, BigInt(betAmount)], // Use the same variable
       });
 
       // Send batch transaction

@@ -30,12 +30,19 @@ export async function GET(
       );
     }
 
+    console.log('=== DEBUG: Challenge scores API ===');
+    console.log('challengeId:', challengeId);
+    console.log('challenge from DB:', challenge);
+
     // Get scores for both players
     const creatorScoreKey = `typing-game:score:${challengeId}:${challenge.creatorFid}`;
     const opponentScoreKey = `typing-game:score:${challengeId}:${challenge.opponentFid}`;
     
     const creatorScore = await redis.get(creatorScoreKey);
     const opponentScore = challenge.opponentFid ? await redis.get(opponentScoreKey) : null;
+
+    console.log('creatorScore:', creatorScore);
+    console.log('opponentScore:', opponentScore);
 
     return NextResponse.json({
       challenge,

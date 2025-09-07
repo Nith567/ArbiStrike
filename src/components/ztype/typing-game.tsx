@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
+import { useAccount } from "wagmi"
 import { cn } from "~/lib/utils"
 import { wordsEasy, wordsMedium, wordsHard } from "~/components/ztype/words"
 import { playShoot, playHit, playLose, initAudio } from "~/components/ztype/webaudio"
@@ -83,6 +84,8 @@ export function TypingGame() {
   // const [difficulty, setDifficulty] = useState<DifficultyKey>("easy")
   const [phase, setPhase] = useState<DifficultyKey>("easy")
   const phaseRef = useRef<DifficultyKey>("easy")
+
+  const { address } = useAccount()
 
   const searchParams = useSearchParams()
   const challengeId = searchParams?.get('challengeId')
@@ -229,8 +232,19 @@ export function TypingGame() {
         console.error('Got:', context.user.fid)
         return
       }
+      
+      // Check if userAddress is valid (starts with 0x), if not use current wallet address
+      if (!userAddress || !userAddress.startsWith('0x')) {
+        console.warn('Challenge data has invalid address:', userAddress, 'using current wallet address:', address)
+        userAddress = address || ''
+      }
     } else {
       console.error('Challenge info not available')
+      return
+    }
+    
+    if (!userAddress) {
+      console.error('No valid wallet address available')
       return
     }
 
