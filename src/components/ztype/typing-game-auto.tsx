@@ -618,9 +618,6 @@ function TypingGameAuto() {
                   <div className="text-white/60">Errors</div>
                   <div className="font-mono text-xl">{finalErrors ?? 0}</div>
                 </div>
-                <div className="col-span-2 text-center text-xs text-white/50 mt-4">
-                  Score = K + (WPM × 10) + (A × 5) − (E × 4) + (S × 2) + (D × 1)
-                </div>
               </div>
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button

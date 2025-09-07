@@ -134,6 +134,14 @@ export async function POST(request: NextRequest) {
       if (winner) {
         await completeChallenge(challengeId, winner);
         
+        // Determine winner details for notification
+        const isCreatorWinner = winner === challenge.creator;
+        const winnerFid = isCreatorWinner ? challenge.creatorFid : challenge.opponentFid;
+        const winnerName = isCreatorWinner ? challenge.creatorName : challenge.opponentName;
+        const loserName = isCreatorWinner ? challenge.opponentName : challenge.creatorName;
+        const winnerScore = isCreatorWinner ? creatorScore.score : opponentScore.score;
+        const loserScore = isCreatorWinner ? opponentScore.score : creatorScore.score;
+        
         // Automatically call smart contract to set winner
         try {
           console.log(`Attempting to set winner on smart contract for challenge ${challengeId}`);
@@ -151,6 +159,34 @@ export async function POST(request: NextRequest) {
         } catch (smartContractError) {
           console.error('Error calling smart contract setWinner:', smartContractError);
           // Don't fail the score submission if smart contract call fails
+        }
+
+        // Send winner notification
+        try {
+          console.log(`Sending winner notification to FID ${winnerFid}`);
+          const notifyWinnerResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/notify-winner`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              winnerFid,
+              winnerName: winnerName || 'Unknown',
+              loserName: loserName || 'Unknown',
+              usdcAmount: `${(parseInt(challenge.betAmount) / 1000000).toFixed(2)} USDC`,
+              challengeId,
+              finalScore: winnerScore,
+              opponentScore: loserScore
+            }),
+          });
+
+          if (notifyWinnerResponse.ok) {
+            const notifyResult = await notifyWinnerResponse.json();
+            console.log(`Winner notification sent successfully:`, notifyResult);
+          } else {
+            console.error(`Winner notification failed:`, await notifyWinnerResponse.text());
+          }
+        } catch (notifyError) {
+          console.error('Error sending winner notification:', notifyError);
+          // Don't fail the score submission if notification fails
         }
       }
     } else if (creatorScore && opponentScore && challenge.status !== 'accepted') {

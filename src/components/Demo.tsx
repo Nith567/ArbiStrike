@@ -401,67 +401,6 @@ export default function Demo(
             )} */}
           </div>
         </div>
-
-        {/* Wallet Section */}
-        {address && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-            <h3 className="font-semibold mb-3 text-sm">💳 Wallet Connected</h3>
-            <div className="text-xs space-y-2">
-              <div>
-                <span className="text-gray-600 dark:text-gray-400">Address:</span>
-                <div className="font-mono bg-white dark:bg-gray-700 p-1 rounded mt-1">
-                  {truncateAddress(address)}
-                </div>
-              </div>
-              {chainId && (
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">Chain:</span>
-                  <div className="font-mono">{chainId}</div>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-3 space-y-2">
-              <Button
-                onClick={() => isConnected ? disconnect() : connect({ connector: config.connectors[0] })}
-                className="w-full text-xs"
-              >
-                {isConnected ? "Disconnect" : "Connect Wallet"}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Context Display */}
-        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-          <h3 className="font-semibold mb-3 text-sm">📋 Context Data</h3>
-          <div className="text-xs">
-            <div className="font-mono p-3 bg-white dark:bg-gray-700 rounded max-h-64 overflow-y-auto">
-              <pre className="whitespace-pre-wrap break-words">
-                {context ? JSON.stringify(context, null, 2) : "Loading context..."}
-              </pre>
-            </div>
-          </div>
-        </div>
-
-        {/* Game Stats / Last Event */}
-        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-          <h3 className="font-semibold mb-2 text-sm">📊 Game Events</h3>
-          <div className="text-xs">
-            <div className="font-mono p-2 bg-white dark:bg-gray-700 rounded">
-              {lastEvent || "No recent events"}
-            </div>
-          </div>
-        </div>
-
-        {/* Client Info */}
-        <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-          <div>Client FID: {context?.client.clientFid}</div>
-          <div className="mt-1">
-            {added ? "🟢 Frame Added" : "⚪ Frame Not Added"} • 
-            {notificationDetails ? " 🔔 Notifications On" : " 🔕 Notifications Off"}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -1300,11 +1239,47 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [createdChallengeId, setCreatedChallengeId] = useState<number | null>(null);
   const [challengeUrls, setChallengeUrls] = useState<{creatorPlay: string, opponentChallenge: string} | null>(null);
+  
+  // Enhanced wallet client state
+  const [walletClientReady, setWalletClientReady] = useState(false);
+  const [walletClientRetryCount, setWalletClientRetryCount] = useState(0);
 
   const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
   const { switchChain } = useSwitchChain();
   const { isConnected } = useAccount();
   const { connect } = useConnect();
+
+  // Enhanced wallet client monitoring and retry logic
+  useEffect(() => {
+    const checkWalletClient = async () => {
+      if (isConnected && !isWalletClientLoading) {
+        if (walletClient) {
+          console.log('✅ Wallet client is ready:', walletClient);
+          setWalletClientReady(true);
+          setWalletClientRetryCount(0);
+        } else if (!walletClientError && walletClientRetryCount < 3) {
+          // Retry logic: sometimes wallet client takes time to initialize
+          console.log(`🔄 Wallet client not ready, retrying... (${walletClientRetryCount + 1}/3)`);
+          setTimeout(() => {
+            setWalletClientRetryCount(prev => prev + 1);
+          }, 1000);
+        } else {
+          console.log('❌ Wallet client failed to load:', walletClientError?.message || 'Unknown error');
+          setWalletClientReady(false);
+        }
+      } else {
+        setWalletClientReady(false);
+      }
+    };
+
+    checkWalletClient();
+  }, [isConnected, walletClient, isWalletClientLoading, walletClientError, walletClientRetryCount]);
+
+  // Reset retry count when connection status changes
+  useEffect(() => {
+    setWalletClientRetryCount(0);
+    setWalletClientReady(false);
+  }, [isConnected]);
 
   // Search for Farcaster users
   useEffect(() => {
@@ -1349,6 +1324,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
     }
 
     console.log('Debug - walletClient:', walletClient);
+    console.log('Debug - walletClientReady:', walletClientReady);
     console.log('Debug - isWalletClientLoading:', isWalletClientLoading);
     console.log('Debug - walletClientError:', walletClientError);
     console.log('Debug - isConnected:', isConnected);
@@ -1356,28 +1332,22 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
     if (isWalletClientLoading) {
       setChallengeResult('🔄 Wallet client is loading. Please wait...');
-      setIsCreatingChallenge(false);
       return;
     }
 
     if (walletClientError) {
       setChallengeResult(`❌ Wallet client error: ${walletClientError.message}`);
-      setIsCreatingChallenge(false);
       return;
     }
 
-    // If wallet client is not available, try to get a fresh one
-    if (!walletClient) {
-      setChallengeResult('🔄 Waiting for wallet client to be ready...');
+    if (!walletClientReady || !walletClient) {
+      setChallengeResult('🔄 Wallet client is not ready. Please wait a moment and try again...');
       
-      // Wait a moment for the wallet client hook to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (!walletClient) {
-        setChallengeResult('❌ Wallet client still not available. Please disconnect and reconnect your wallet, then try again');
-        setIsCreatingChallenge(false);
-        return;
+      // Trigger a retry by incrementing the retry count
+      if (walletClientRetryCount < 3) {
+        setWalletClientRetryCount(prev => prev + 1);
       }
+      return;
     }
 
     if (!context?.user?.fid) {
@@ -1565,14 +1535,30 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           <div className="text-green-600 dark:text-green-400 mt-1">
             Wallet Client: {
               isWalletClientLoading ? '🔄 Loading...' : 
-              walletClient ? '✅ Available' : 
+              walletClientReady ? '✅ Ready' : 
+              walletClientRetryCount > 0 ? `🔄 Retrying... (${walletClientRetryCount}/3)` :
               walletClientError ? `❌ Error: ${walletClientError.message}` : '❌ Not Available'
             }
           </div>
-          {!walletClient && !isWalletClientLoading && (
+          {!walletClientReady && !isWalletClientLoading && (
             <div className="text-orange-600 dark:text-orange-400 text-xs mt-1">
-              ⚠️ Wallet client is not ready. This may cause transaction failures.
+              {walletClientRetryCount > 0 ? (
+                '🔄 Trying to establish wallet connection...'
+              ) : (
+                '⚠️ Wallet client is not ready. This may cause transaction failures.'
+              )}
             </div>
+          )}
+          {!walletClientReady && !isWalletClientLoading && walletClientRetryCount >= 3 && (
+            <Button
+              onClick={() => {
+                setWalletClientRetryCount(0);
+                setTimeout(() => setWalletClientRetryCount(1), 100);
+              }}
+              className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white text-xs"
+            >
+              🔄 Retry Wallet Connection
+            </Button>
           )}
         </div>
       )}
@@ -1666,7 +1652,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || !walletClient || isWalletClientLoading || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || !walletClientReady || isWalletClientLoading || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
@@ -1676,8 +1662,10 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
             ? '❌ Connect Wallet First'
             : isWalletClientLoading
               ? '🔄 Loading Wallet Client...'
-            : !walletClient
-              ? '❌ Wallet Client Not Ready'
+            : !walletClientReady
+              ? walletClientRetryCount > 0 
+                ? `🔄 Preparing Wallet... (${walletClientRetryCount}/3)`
+                : '❌ Wallet Client Not Ready'
             : !selectedUser 
               ? '❌ Select User First'
               : '✅ Create Challenge & Bet USDC'
