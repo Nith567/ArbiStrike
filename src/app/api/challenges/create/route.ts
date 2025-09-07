@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       opponentFid,
       opponentName,
       betAmount,
-      status: 'created'
+      status: 'waiting_opponent' // Changed from 'created' to 'waiting_opponent'
     });
 
     return NextResponse.json({

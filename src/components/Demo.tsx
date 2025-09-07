@@ -341,6 +341,9 @@ export default function Demo(
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
               Challenge other players for USDC rewards
             </p>
+            <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900 p-2 rounded">
+              📝 <strong>Flow:</strong> 1) Create challenge & bet USDC → 2) YOU play first to set score → 3) Share with opponent
+            </div>
           </div>
           
           <CreateChallenge context={context} address={address} />
@@ -1375,13 +1378,18 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       });
 
       if (result.status === 'success') {
-        setChallengeResult(`Challenge created successfully! Challenge ID: ${challengeId}. Now YOU need to play first to set your score. Click the button below to play!`);
+        setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+        
+💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
+
+🎮 NEXT STEP: You need to play first to set your score!`);
         setCreatedChallengeId(challengeId);
         
         // Don't reset form yet - show play button instead
         // After creator plays, then we'll show the share link
       } else {
-        setChallengeResult('Transaction failed or pending');
+        setChallengeResult('❌ Transaction failed or pending. Please try again.');
       }
 
     } catch (error) {
@@ -1463,12 +1471,18 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
       {/* Selected User */}
       {selectedUser && (
-        <div className="p-2 bg-green-50 dark:bg-green-900 rounded border text-xs">
-          <div className="font-medium text-green-700 dark:text-green-300">
-            Selected: {selectedUser.display_name} (@{selectedUser.username})
+        <div className="p-3 bg-green-50 dark:bg-green-900 rounded border text-xs">
+          <div className="font-medium text-green-700 dark:text-green-300 mb-2">
+            ✅ Selected: {selectedUser.display_name} (@{selectedUser.username})
+          </div>
+          <div className="text-green-600 dark:text-green-400 mb-1">
+            <span className="font-medium">FID:</span> {selectedUser.fid}
           </div>
           <div className="text-green-600 dark:text-green-400">
-            Address: {selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address}
+            <span className="font-medium">Wallet:</span> 
+            <div className="font-mono mt-1 p-1 bg-green-100 dark:bg-green-800 rounded text-xs break-all">
+              {selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address}
+            </div>
           </div>
         </div>
       )}

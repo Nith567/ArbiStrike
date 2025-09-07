@@ -1,6 +1,5 @@
 import { getChallengeById } from '~/lib/db';
 import ChallengeAcceptPage from './ChallengeAcceptPage';
-
 interface Props {
   params: { id: string };
 }
