@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       target_fids: [targetFid],
       notification: {
         title: "🎮 ZTyping Challenge!",
-        body: `${challengerName} is challenging you to a typing battle for ${usdcAmount} USDC! Think you can beat their score? 🚀⌨️`,
+        body: `${challengerName} is challenging you to a typing battle for ${usdcAmount}! Can you  beat the score? 🚀⌨️`,
         target_url: challengeUrl,
         uuid: notificationUUID
       }
