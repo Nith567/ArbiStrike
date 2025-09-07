@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { winnerFid, winnerName, loserName, usdcAmount, challengeId, finalScore, opponentScore } = body;
+    const { winnerFid, winnerName, loserName, usdcAmount, challengeId, finalScore, opponentScore, transactionHash } = body;
 
     if (!winnerFid || !winnerName || !loserName || !usdcAmount || !challengeId) {
       return NextResponse.json(
@@ -15,12 +15,17 @@ export async function POST(request: NextRequest) {
     // Generate a unique UUID for the notification
     const notificationUUID = crypto.randomUUID();
     
+    // Use transaction hash URL if available, otherwise fallback to challenge URL
+    const targetUrl = transactionHash 
+      ? `https://arbiscan.io/tx/${transactionHash}`
+      : `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`;
+    
     const notificationPayload = {
       target_fids: [winnerFid],
       notification: {
         title: "🏆 Victory! You Won the ZTyping Challenge!",
-        body: `Congratulations! You defeated ${loserName} and won ${usdcAmount} USDC! ${finalScore ? `Your score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} 🎉💰`,
-        target_url: `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`,
+        body: `Congratulations! You defeated ${loserName} and won ${usdcAmount}! ${finalScore ? `Your score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} ${transactionHash ? 'View your payout transaction! 💰' : '🎉💰'}`,
+        target_url: targetUrl,
         uuid: notificationUUID
       }
     };
@@ -50,7 +55,9 @@ export async function POST(request: NextRequest) {
       sentTo: winnerFid,
       winnerName: winnerName,
       amount: usdcAmount,
-      message: `Winner notification sent to ${winnerName} (FID: ${winnerFid})`
+      transactionHash: transactionHash || null,
+      targetUrl: targetUrl,
+      message: `Winner notification sent to ${winnerName} (FID: ${winnerFid})${transactionHash ? ' with transaction link' : ''}`
     });
 
   } catch (error) {

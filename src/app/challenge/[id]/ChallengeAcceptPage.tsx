@@ -193,11 +193,14 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
   if (!isSDKLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
         <div className="text-center">
-          <div className="text-2xl">🎮</div>
-          <div className="mt-2">
-            {!isSDKLoaded ? 'Loading SDK...' : 'Loading challenge...'}
+          <div className="text-6xl mb-4 animate-bounce">🎮</div>
+          <div className="text-xl font-semibold mb-2">
+            {!isSDKLoaded ? 'Preparing your challenge...' : 'Loading challenge details...'}
+          </div>
+          <div className="text-gray-300">
+            Please wait a moment
           </div>
         </div>
       </div>
@@ -206,15 +209,16 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
   if (error || !challenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-500">Challenge Not Found</h1>
-          <p className="text-gray-400 mt-2">{error || 'This challenge does not exist.'}</p>
+          <div className="text-6xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold text-red-400 mb-2">Challenge Not Found</h1>
+          <p className="text-gray-300 mt-2 mb-6">{error || 'This challenge does not exist or has been removed.'}</p>
           <Button 
             onClick={() => window.location.href = '/'}
-            className="mt-4"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
           >
-            Go Home
+            🏠 Go Home
           </Button>
         </div>
       </div>
@@ -222,17 +226,17 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">⚔️ Typing Challenge</h1>
-          <p className="text-gray-400">Challenge #{challenge.id}</p>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">⚔️ Typing Challenge</h1>
+          <p className="text-gray-300">Challenge #{challenge.id}</p>
         </div>
 
         {/* Debug Info (remove in production) */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="bg-gray-800 rounded-lg p-4 mb-6 text-xs">
+          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 mb-6 text-xs border border-gray-700">
             <h3 className="text-yellow-400 mb-2">Debug Info:</h3>
             <div>isConnected: {String(isConnected)}</div>
             <div>address: {address || 'null'}</div>
@@ -244,41 +248,41 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         )}
 
         {/* Challenge Details */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Challenge Details</h2>
+        <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 mb-6 border border-gray-700">
+          <h2 className="text-xl font-semibold mb-4 text-white">Challenge Details</h2>
           
           <div className="space-y-4 text-sm">
             <div>
-              <span className="text-gray-400 block mb-2">Creator:</span>
+              <span className="text-gray-300 block mb-2">Creator:</span>
               <div className="flex items-center space-x-3">
                 {challenge.creatorPfp && (
                   <img
                     src={challenge.creatorPfp}
                     alt={challenge.creatorName || 'Creator'}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full border-2 border-purple-400"
                   />
                 )}
                 <div>
                   <div className="font-medium text-white">
                     {challenge.creatorName || 'Unknown'}
                   </div>
-                  <div className="text-gray-400 font-mono text-xs">
+                  <div className="text-gray-300 font-mono text-xs">
                     {truncateAddress(challenge.creator)}
                   </div>
-                  <div className="text-gray-500 text-xs">
+                  <div className="text-gray-400 text-xs">
                     FID: {challenge.creatorFid}
                   </div>
                 </div>
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Bet Amount:</span>
+              <span className="text-gray-300">Bet Amount:</span>
               <span className="font-bold text-green-400">
                 {formatUnits(BigInt(challenge.betAmount), 6)} USDC
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Status:</span>
+              <span className="text-gray-300">Status:</span>
               <span className={`font-medium ${
                 challenge.status === 'created' ? 'text-blue-400' :
                 challenge.status === 'waiting_opponent' ? 'text-yellow-400' :
@@ -294,7 +298,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         <div className="space-y-4">
           {challenge.status === 'created' && (
             <div className="text-center">
-              <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded mb-4">
+              <div className="p-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-lg mb-4 backdrop-blur-sm">
                 <div className="text-blue-400 font-medium mb-2">⏳ Challenge Created</div>
                 <div className="text-sm text-blue-300">
                   {challenge.creatorName || 'The creator'} needs to play first to set their score. Please wait for them to complete their game.
@@ -305,7 +309,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
           {challenge.status === 'waiting_opponent' && (
             <>
-              <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded mb-4">
+              <div className="p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg mb-4 backdrop-blur-sm">
                 <div className="text-yellow-400 font-medium mb-2">🎯 Ready to Accept!</div>
                 <div className="text-sm text-yellow-300">
                   {challenge.creatorName || 'The challenger'} has set their score. You can now accept this challenge and show your typing skills!
@@ -313,7 +317,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
               </div>
               {!isConnected ? (
                 <div className="text-center">
-                  <p className="text-gray-400 mb-4">Connect your wallet to accept this challenge</p>
+                  <p className="text-gray-300 mb-4">🔗 Connect your wallet to accept this challenge</p>
                   <Button 
                     onClick={() => {
                       // Trigger wallet connection
@@ -321,23 +325,16 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                         (window as any).ethereum.request({ method: 'eth_requestAccounts' });
                       }
                     }}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
-                    Connect Wallet
-                  </Button>
-                </div>
-              ) : !walletClient ? (
-                <div className="text-center">
-                  <p className="text-gray-400 mb-4">Setting up wallet client...</p>
-                  <Button disabled className="w-full">
-                    Wallet Client Loading...
+                    🔗 Connect Wallet
                   </Button>
                 </div>
               ) : !context ? (
                 <div className="text-center">
-                  <p className="text-gray-400 mb-4">Loading Farcaster context...</p>
-                  <Button disabled className="w-full">
-                    Loading Context...
+                  <p className="text-gray-300 mb-4">🔄 Getting ready...</p>
+                  <Button disabled className="w-full bg-gray-600">
+                    📱 Almost there...
                   </Button>
                 </div>
               ) : (
@@ -345,9 +342,9 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                   onClick={handleAcceptChallenge}
                   disabled={isAccepting}
                   isLoading={isAccepting}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
-                  {isAccepting ? 'Accepting Challenge...' : 'Accept Challenge & Bet USDC'}
+                  {isAccepting ? '⏳ Accepting Challenge...' : '✅ Accept Challenge & Bet USDC'}
                 </Button>
               )}
             </>
@@ -356,17 +353,17 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
           {challenge.status === 'accepted' && (
             <Button
               onClick={() => window.location.href = `/ztype?challengeId=${challenge.id}&role=opponent`}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               🚀 Play Challenge Game
             </Button>
           )}
 
           {challenge.status === 'completed' && (
-            <div className="text-center">
-              <div className="text-2xl mb-2">🏆</div>
-              <p className="text-green-400 font-bold">Challenge Completed!</p>
-              <p className="text-gray-400">
+            <div className="text-center bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg p-6 backdrop-blur-sm">
+              <div className="text-4xl mb-4">🏆</div>
+              <p className="text-green-400 font-bold text-lg mb-2">Challenge Completed!</p>
+              <p className="text-gray-300">
                 Winner: {challenge.winner ? truncateAddress(challenge.winner) : 'Unknown'}
               </p>
             </div>
@@ -374,10 +371,10 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
           {/* Result Message */}
           {acceptResult && (
-            <div className={`p-3 rounded text-sm ${
+            <div className={`p-3 rounded-lg text-sm backdrop-blur-sm ${
               acceptResult.includes('successfully')
-                ? 'bg-green-900 text-green-300'
-                : 'bg-red-900 text-red-300'
+                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                : 'bg-red-500/20 text-red-300 border border-red-500/30'
             }`}>
               {acceptResult}
             </div>
@@ -388,7 +385,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         <div className="mt-8 text-center">
           <Button
             onClick={() => window.location.href = '/'}
-            className="bg-gray-700 hover:bg-gray-600"
+            className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 backdrop-blur-sm"
           >
             ← Back to Home
           </Button>

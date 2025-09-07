@@ -313,7 +313,15 @@ export default function Demo(
   const solanaAddress = solanaPublicKey?.toBase58();
 
   if (!isSDKLoaded) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🚀</div>
+          <div className="text-xl font-semibold mb-2">Getting ready for your typing adventure...</div>
+          <div className="text-gray-300">Please wait a moment</div>
+        </div>
+      </div>
+    );
   }
 
   return (

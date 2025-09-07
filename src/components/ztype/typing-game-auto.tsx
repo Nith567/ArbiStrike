@@ -541,7 +541,6 @@ function TypingGameAuto() {
               <p className="mt-2 text-white/70 text-sm md:text-base">
                 Type to target and destroy descending words.
                 <br />
-                Esc to pause. Click the play area to focus.
               </p>
               <button
                 onClick={startGame}

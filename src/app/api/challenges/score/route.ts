@@ -105,12 +105,42 @@ export async function POST(request: NextRequest) {
       token: process.env.KV_REST_API_TOKEN!,
     });
 
-    await redis.set(scoreKey, gameScore);
-
-    // Check if both players have submitted scores
+    // Check if this is the creator's first score submission
     const creatorScoreKey = `typing-game:score:${challengeId}:${challenge.creatorFid}`;
     const opponentScoreKey = `typing-game:score:${challengeId}:${challenge.opponentFid}`;
-    
+    const existingCreatorScore = await redis.get<GameScore>(creatorScoreKey);
+    const shouldNotifyOpponent = isCreator && !existingCreatorScore && challenge.status === 'waiting_opponent';
+
+    await redis.set(scoreKey, gameScore);
+
+    // If this is the creator submitting their first score, notify the opponent
+    if (shouldNotifyOpponent) {
+      try {
+        console.log(`Creator submitted score, notifying opponent (FID: ${challenge.opponentFid})`);
+        const notifyResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/notify-challenge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetFid: challenge.opponentFid,
+            challengerName: challenge.creatorName || 'Unknown',
+            usdcAmount: `${formatUnits(BigInt(challenge.betAmount), 6)} USDC`,
+            challengeId,
+            challengeUrl: `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`
+          }),
+        });
+
+        if (notifyResponse.ok) {
+          console.log('Challenge notification sent to opponent successfully');
+        } else {
+          console.error('Failed to send challenge notification:', await notifyResponse.text());
+        }
+      } catch (notifyError) {
+        console.error('Error sending challenge notification:', notifyError);
+        // Don't fail the score submission if notification fails
+      }
+    }
+
+    // Check if both players have submitted scores
     const creatorScore = await redis.get<GameScore>(creatorScoreKey);
     const opponentScore = await redis.get<GameScore>(opponentScoreKey);
 
@@ -144,6 +174,7 @@ export async function POST(request: NextRequest) {
         const loserScore = isCreatorWinner ? opponentScore.score : creatorScore.score;
         
         // Automatically call smart contract to set winner
+        let transactionHash = null;
         try {
           console.log(`Attempting to set winner on smart contract for challenge ${challengeId}`);
           const setWinnerResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/challenges/${challengeId}/set-winner`, {
@@ -153,6 +184,7 @@ export async function POST(request: NextRequest) {
           
           if (setWinnerResponse.ok) {
             const result = await setWinnerResponse.json();
+            transactionHash = result.transactionHash;
             console.log(`Smart contract setWinner successful:`, result);
           } else {
             console.error(`Smart contract setWinner failed:`, await setWinnerResponse.text());
@@ -175,7 +207,8 @@ export async function POST(request: NextRequest) {
               usdcAmount: `${formatUnits(BigInt(challenge.betAmount), 6)} USDC`,
               challengeId,
               finalScore: winnerScore,
-              opponentScore: loserScore
+              opponentScore: loserScore,
+              transactionHash
             }),
           });
 

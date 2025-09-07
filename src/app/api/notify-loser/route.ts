@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       target_fids: [loserFid],
       notification: {
         title: "😔 ZTyping Challenge - You Lost",
-        body: `You lost to ${winnerName} and they won ${usdcAmount} USDC. ${loserScore !== undefined && winnerScore !== undefined ? `Your score: ${loserScore} vs ${winnerName}'s score: ${winnerScore}` : ''} Better luck next time! 💪`,
+        body: `You lost to ${winnerName} and he won ${usdcAmount}. ${loserScore !== undefined && winnerScore !== undefined ? `Your score: ${loserScore} vs ${winnerName}'s score: ${winnerScore}` : ''} Better luck next time! 💪`,
         target_url: `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`,
         uuid: notificationUUID
       }
