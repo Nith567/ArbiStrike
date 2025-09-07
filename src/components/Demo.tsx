@@ -781,7 +781,7 @@ function SendTokenSolana() {
 
 function TestBatchOperation() {
   const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
   const [capabilities, setCapabilities] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forceAtomic, setForceAtomic] = useState(false);
@@ -803,6 +803,16 @@ function TestBatchOperation() {
       setError('No wallet client or address');
       return;
     }
+
+    if (isWalletClientLoading) {
+      setError('Wallet client is still loading');
+      return;
+    }
+
+    if (walletClientError) {
+      setError(`Wallet client error: ${walletClientError.message}`);
+      return;
+    }
     
     setIsGettingCapabilities(true);
     setError(null);
@@ -821,13 +831,24 @@ function TestBatchOperation() {
     } finally {
       setIsGettingCapabilities(false);
     }
-  }, [walletClient, address]);
+  }, [walletClient, isWalletClientLoading, walletClientError, address]);
 
   const handleSendCalls = useCallback(async () => {
     if (!walletClient || !address) {
       setError('No wallet client or address');
       return;
     }
+
+    if (isWalletClientLoading) {
+      setError('Wallet client is still loading');
+      return;
+    }
+
+    if (walletClientError) {
+      setError(`Wallet client error: ${walletClientError.message}`);
+      return;
+    }
+
     switchChain({ chainId: base.id });
     
     setIsSendingCalls(true);
@@ -869,13 +890,24 @@ function TestBatchOperation() {
     } finally {
       setIsSendingCalls(false);
     }
-  }, [walletClient, address, forceAtomic, switchChain]);
+  }, [walletClient, isWalletClientLoading, walletClientError, address, forceAtomic, switchChain]);
 
   const handleSendCallsApproveAndTransfer = useCallback(async () => {
     if (!walletClient || !address) {
       setApproveTransferError('No wallet client or address');
       return;
     }
+
+    if (isWalletClientLoading) {
+      setApproveTransferError('Wallet client is still loading');
+      return;
+    }
+
+    if (walletClientError) {
+      setApproveTransferError(`Wallet client error: ${walletClientError.message}`);
+      return;
+    }
+
     // Ensure we are on Base for this test
     switchChain({ chainId: base.id });
 
@@ -924,7 +956,7 @@ function TestBatchOperation() {
     } finally {
       setIsSendingApproveTransfer(false);
     }
-  }, [walletClient, address, switchChain]);
+  }, [walletClient, isWalletClientLoading, walletClientError, address, switchChain]);
 
   return (
     <>
@@ -938,7 +970,7 @@ function TestBatchOperation() {
         <div className="mb-4">
           <Button 
             onClick={handleGetCapabilities}
-            disabled={!isConnected || isGettingCapabilities}
+            disabled={!isConnected || isGettingCapabilities || !walletClient || isWalletClientLoading}
             isLoading={isGettingCapabilities}
           >
             Get Capabilities
@@ -970,7 +1002,7 @@ function TestBatchOperation() {
           
           <Button 
             onClick={handleSendCalls}
-            disabled={!isConnected || isSendingCalls}
+            disabled={!isConnected || isSendingCalls || !walletClient || isWalletClientLoading}
             isLoading={isSendingCalls}
           >
             Send Batch Calls
@@ -980,7 +1012,7 @@ function TestBatchOperation() {
         <div className="mb-4">
           <Button
             onClick={handleSendCallsApproveAndTransfer}
-            disabled={!isConnected || isSendingApproveTransfer}
+            disabled={!isConnected || isSendingApproveTransfer || !walletClient || isWalletClientLoading}
             isLoading={isSendingApproveTransfer}
           >
             SendCalls: Approve 10c USDC + mockTransfer (This will take 10c in USDC, use at your own discression)
@@ -1269,7 +1301,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   const [createdChallengeId, setCreatedChallengeId] = useState<number | null>(null);
   const [challengeUrls, setChallengeUrls] = useState<{creatorPlay: string, opponentChallenge: string} | null>(null);
 
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
   const { switchChain } = useSwitchChain();
   const { isConnected } = useAccount();
   const { connect } = useConnect();
@@ -1311,9 +1343,41 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       return;
     }
 
-    if (!walletClient) {
-      setChallengeResult('❌ Wallet client not available. Please refresh and try again');
+    if (!isConnected) {
+      setChallengeResult('❌ Wallet is not connected. Please connect your wallet first');
       return;
+    }
+
+    console.log('Debug - walletClient:', walletClient);
+    console.log('Debug - isWalletClientLoading:', isWalletClientLoading);
+    console.log('Debug - walletClientError:', walletClientError);
+    console.log('Debug - isConnected:', isConnected);
+    console.log('Debug - address:', address);
+
+    if (isWalletClientLoading) {
+      setChallengeResult('🔄 Wallet client is loading. Please wait...');
+      setIsCreatingChallenge(false);
+      return;
+    }
+
+    if (walletClientError) {
+      setChallengeResult(`❌ Wallet client error: ${walletClientError.message}`);
+      setIsCreatingChallenge(false);
+      return;
+    }
+
+    // If wallet client is not available, try to get a fresh one
+    if (!walletClient) {
+      setChallengeResult('🔄 Waiting for wallet client to be ready...');
+      
+      // Wait a moment for the wallet client hook to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (!walletClient) {
+        setChallengeResult('❌ Wallet client still not available. Please disconnect and reconnect your wallet, then try again');
+        setIsCreatingChallenge(false);
+        return;
+      }
     }
 
     if (!context?.user?.fid) {
@@ -1418,7 +1482,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
     } finally {
       setIsCreatingChallenge(false);
     }
-  }, [walletClient, address, selectedUser, context, betAmount, switchChain]);
+  }, [walletClient, isWalletClientLoading, walletClientError, address, selectedUser, context, betAmount, switchChain]);
 
   return (
     <div className="space-y-4">
@@ -1446,6 +1510,18 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           <div className="font-medium text-green-700 dark:text-green-300">
             ✅ Wallet Connected: {truncateAddress(address)}
           </div>
+          <div className="text-green-600 dark:text-green-400 mt-1">
+            Wallet Client: {
+              isWalletClientLoading ? '🔄 Loading...' : 
+              walletClient ? '✅ Available' : 
+              walletClientError ? `❌ Error: ${walletClientError.message}` : '❌ Not Available'
+            }
+          </div>
+          {!walletClient && !isWalletClientLoading && (
+            <div className="text-orange-600 dark:text-orange-400 text-xs mt-1">
+              ⚠️ Wallet client is not ready. This may cause transaction failures.
+            </div>
+          )}
         </div>
       )}
 
@@ -1538,7 +1614,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || !walletClient || isWalletClientLoading || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
@@ -1546,6 +1622,10 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           ? 'Creating Challenge...' 
           : !isConnected 
             ? '❌ Connect Wallet First'
+            : isWalletClientLoading
+              ? '🔄 Loading Wallet Client...'
+            : !walletClient
+              ? '❌ Wallet Client Not Ready'
             : !selectedUser 
               ? '❌ Select User First'
               : '✅ Create Challenge & Bet USDC'
