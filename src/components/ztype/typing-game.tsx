@@ -106,6 +106,7 @@ export function TypingGame() {
   const [scoreSubmitted, setScoreSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [challengeInfo, setChallengeInfo] = useState<any>(null)
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -152,11 +153,22 @@ export function TypingGame() {
         try {
           const ctx = await sdk.context
           setContext(ctx)
+          
+          // Set up SDK ready
+          sdk.actions.ready({});
         } catch (error) {
           console.error('Failed to load Farcaster context:', error)
         }
       }
-      loadContext()
+
+      if (sdk && !isSDKLoaded) {
+        setIsSDKLoaded(true);
+        loadContext();
+        
+        return () => {
+          sdk.removeAllListeners();
+        };
+      }
 
       // Also load challenge info
       const loadChallengeInfo = async () => {
@@ -172,7 +184,7 @@ export function TypingGame() {
       }
       loadChallengeInfo()
     }
-  }, [challengeId])
+  }, [challengeId, isSDKLoaded])
 
   // Submit score for challenge
   const submitChallengeScore = useCallback(async () => {
