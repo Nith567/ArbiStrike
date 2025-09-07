@@ -114,21 +114,47 @@ export async function POST(request: NextRequest) {
     const opponentScore = await redis.get<GameScore>(opponentScoreKey);
 
     let winner = null;
-    if (creatorScore && opponentScore) {
+    // Only determine winner if both players have played AND challenge is accepted
+    if (creatorScore && opponentScore && challenge.status === 'accepted') {
+      console.log('Both players have played and challenge is accepted. Determining winner...');
       // Both players have played, determine winner
       if (creatorScore.score > opponentScore.score) {
         winner = challenge.creator;
+        console.log(`Creator wins by score: ${creatorScore.score} > ${opponentScore.score}`);
       } else if (opponentScore.score > creatorScore.score) {
         winner = challenge.opponent;
+        console.log(`Opponent wins by score: ${opponentScore.score} > ${creatorScore.score}`);
       } else {
         // Tie - use WPM as tiebreaker
         winner = creatorScore.wpm >= opponentScore.wpm ? challenge.creator : challenge.opponent;
+        console.log(`Tie game! Winner by WPM: ${winner} (Creator WPM: ${creatorScore.wpm}, Opponent WPM: ${opponentScore.wpm})`);
       }
 
       // Complete the challenge with the winner
       if (winner) {
         await completeChallenge(challengeId, winner);
+        
+        // Automatically call smart contract to set winner
+        try {
+          console.log(`Attempting to set winner on smart contract for challenge ${challengeId}`);
+          const setWinnerResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/challenges/${challengeId}/set-winner`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          if (setWinnerResponse.ok) {
+            const result = await setWinnerResponse.json();
+            console.log(`Smart contract setWinner successful:`, result);
+          } else {
+            console.error(`Smart contract setWinner failed:`, await setWinnerResponse.text());
+          }
+        } catch (smartContractError) {
+          console.error('Error calling smart contract setWinner:', smartContractError);
+          // Don't fail the score submission if smart contract call fails
+        }
       }
+    } else if (creatorScore && opponentScore && challenge.status !== 'accepted') {
+      console.log(`WARNING: Both players have scores but challenge status is '${challenge.status}', not 'accepted'. Winner will not be determined yet.`);
     }
 
     return NextResponse.json({

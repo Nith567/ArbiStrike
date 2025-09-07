@@ -98,7 +98,13 @@ export async function acceptChallenge(id: number, opponent: string, opponentFid:
 
 export async function completeChallenge(id: number, winner: string): Promise<Challenge | null> {
   const challenge = await getChallengeById(id);
-  if (!challenge || challenge.status !== 'accepted') {
+  if (!challenge) {
+    return null;
+  }
+  
+  // Allow completion if status is 'accepted' or 'waiting_opponent' (in case both players played)
+  if (challenge.status !== 'accepted' && challenge.status !== 'waiting_opponent') {
+    console.log(`Cannot complete challenge ${id}: status is ${challenge.status}, expected 'accepted' or 'waiting_opponent'`);
     return null;
   }
   
