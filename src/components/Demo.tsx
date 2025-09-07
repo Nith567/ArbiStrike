@@ -314,11 +314,19 @@ export default function Demo(
 
   if (!isSDKLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🚀</div>
-          <div className="text-xl font-semibold mb-2">Getting ready for your typing adventure...</div>
-          <div className="text-gray-300">Please wait a moment</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white">
+        <div className="text-center p-8">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl animate-pulse"></div>
+            <div className="relative text-7xl animate-bounce">⚡</div>
+          </div>
+          <div className="text-2xl font-bold mb-3 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            Initializing ZTyping Arena
+          </div>
+          <div className="text-gray-400 animate-pulse">Preparing your gaming experience...</div>
+          <div className="mt-6 w-32 h-1 bg-gray-700 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full animate-pulse"></div>
+          </div>
         </div>
       </div>
     );
@@ -326,6 +334,7 @@ export default function Demo(
 
   return (
     <div
+      className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white"
       style={{
         paddingTop: context?.client.safeAreaInsets?.top ?? 0,
         paddingBottom: context?.client.safeAreaInsets?.bottom ?? 0,
@@ -333,24 +342,40 @@ export default function Demo(
         paddingRight: context?.client.safeAreaInsets?.right ?? 0,
       }}
     >
-      <div className="w-[300px] mx-auto py-4 px-4">
+      <div className="w-full max-w-md mx-auto py-6 px-4">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-2">🚀 ZTyping Space Game</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Type fast, destroy aliens, reach the stars!
+        <div className="text-center mb-8">
+          <div className="relative inline-block mb-4">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-xl rounded-full"></div>
+            <div className="relative text-6xl">⚡</div>
+          </div>
+          <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            ZTyping Arena
+          </h1>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            Master your typing skills in epic space battles.<br/>
+            <span className="text-purple-400">Compete • Earn • Dominate</span>
           </p>
         </div>
 
         {/* Challenge Section */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
-          <div className="text-center mb-4">
-            <h2 className="text-lg font-semibold mb-2">⚔️ Create Challenge</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Challenge other players for USDC rewards
+        <div className="mb-6 p-6 bg-gradient-to-br from-purple-900/40 to-cyan-900/20 rounded-2xl border border-purple-500/20 backdrop-blur-sm shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl mb-4">
+              <span className="text-2xl">⚔️</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-white">Battle Arena</h2>
+            <p className="text-gray-400 text-sm mb-4">
+              Challenge players worldwide for USDC rewards
             </p>
-            <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900 p-2 rounded">
-              📝 <strong>Flow:</strong> 1) Create challenge & bet USDC → 2) YOU play first to set score → 3) Share with opponent
+            <div className="text-xs bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/30 rounded-xl p-3 backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-blue-400">📋</span>
+                <span className="font-semibold text-blue-300">Battle Flow</span>
+              </div>
+              <div className="text-gray-300 leading-relaxed">
+                Create Challenge → Set Your Score → Share Battle Link
+              </div>
             </div>
           </div>
           
@@ -358,11 +383,14 @@ export default function Demo(
         </div>
 
         {/* Main Game Section */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
-          <div className="text-center mb-4">
-            <h2 className="text-lg font-semibold mb-2">🎮 Play ZTyping Game</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Epic space typing shooter with increasing difficulty
+        <div className="mb-6 p-6 bg-gradient-to-br from-blue-900/40 to-purple-900/20 rounded-2xl border border-blue-500/20 backdrop-blur-sm shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4">
+              <span className="text-2xl">🎮</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-white">Solo Arena</h2>
+            <p className="text-gray-400 text-sm mb-4">
+              Train your skills in the cosmic battlefield
             </p>
           </div>
           
@@ -374,39 +402,54 @@ export default function Demo(
               const gameUrl = challengeId ? `/ztype?challengeId=${challengeId}` : '/ztype';
               window.location.href = gameUrl;
             }} 
-            className="w-full mb-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            className="w-full mb-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-purple-500/25"
           >
-            🚀 Launch Game
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-xl">🚀</span>
+              <span>Enter Arena</span>
+            </span>
           </Button>
 
-          {/* Add Frame to Client */}
-          <div className="border-t pt-3">
-            <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Subscribe for game updates & winner updates
+          {/* Notifications Section */}
+          <div className="border-t border-gray-700/50 pt-4">
+            <div className="text-center mb-3">
+              <div className="inline-flex items-center gap-2 text-sm text-gray-400">
+                <span className="text-yellow-400">🔔</span>
+                <span>Battle Notifications</span>
+              </div>
             </div>
             {addFrameResult && (
-              <div className="mb-2 text-xs p-2 bg-green-50 dark:bg-green-900 rounded border text-green-700 dark:text-green-300">
-                ✅ {addFrameResult}
+              <div className="mb-3 text-xs p-3 bg-green-900/30 border border-green-500/30 rounded-xl text-green-300 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <span>✅</span>
+                  <span>{addFrameResult}</span>
+                </div>
               </div>
             )}
             <Button 
               onClick={addFrame} 
               disabled={added}
-              className="w-full text-xs"
+              className={`w-full text-sm py-3 rounded-xl transition-all duration-300 ${
+                added 
+                  ? 'bg-green-900/30 border border-green-500/30 text-green-300 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-yellow-600/80 to-orange-600/80 hover:from-yellow-600 hover:to-orange-600 text-white border border-yellow-500/30 hover:scale-105'
+              }`}
             >
-              {added ? "✅ Subscribed to Updates" : "🔔 Subscribe to Game Updates"}
+              <span className="flex items-center justify-center gap-2">
+                <span>{added ? "✅" : "🔔"}</span>
+                <span>{added ? "Notifications Active" : "Enable Battle Alerts"}</span>
+              </span>
             </Button>
-            
-            {/* Commented notification send */}
-            {/* {notificationDetails && (
-              <Button 
-                onClick={sendNotification} 
-                className="w-full mt-2 text-xs"
-                disabled={!notificationDetails}
-              >
-                📨 Test Notification
-              </Button>
-            )} */}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-500 mt-8">
+          <p>Powered by Farcaster Frames v2</p>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <span className="text-purple-400">⚡ Fast</span>
+            <span className="text-cyan-400">🛡️ Secure</span>
+            <span className="text-pink-400">🏆 Competitive</span>
           </div>
         </div>
       </div>
@@ -1248,46 +1291,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   const [createdChallengeId, setCreatedChallengeId] = useState<number | null>(null);
   const [challengeUrls, setChallengeUrls] = useState<{creatorPlay: string, opponentChallenge: string} | null>(null);
   
-  // Enhanced wallet client state
-  const [walletClientReady, setWalletClientReady] = useState(false);
-  const [walletClientRetryCount, setWalletClientRetryCount] = useState(0);
-
-  const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
+  // Simple wallet client approach like in try.tsx
+  const { data: walletClient } = useWalletClient();
   const { switchChain } = useSwitchChain();
   const { isConnected } = useAccount();
   const { connect } = useConnect();
-
-  // Enhanced wallet client monitoring and retry logic
-  useEffect(() => {
-    const checkWalletClient = async () => {
-      if (isConnected && !isWalletClientLoading) {
-        if (walletClient) {
-          console.log('✅ Wallet client is ready:', walletClient);
-          setWalletClientReady(true);
-          setWalletClientRetryCount(0);
-        } else if (!walletClientError && walletClientRetryCount < 3) {
-          // Retry logic: sometimes wallet client takes time to initialize
-          console.log(`🔄 Wallet client not ready, retrying... (${walletClientRetryCount + 1}/3)`);
-          setTimeout(() => {
-            setWalletClientRetryCount(prev => prev + 1);
-          }, 1000);
-        } else {
-          console.log('❌ Wallet client failed to load:', walletClientError?.message || 'Unknown error');
-          setWalletClientReady(false);
-        }
-      } else {
-        setWalletClientReady(false);
-      }
-    };
-
-    checkWalletClient();
-  }, [isConnected, walletClient, isWalletClientLoading, walletClientError, walletClientRetryCount]);
-
-  // Reset retry count when connection status changes
-  useEffect(() => {
-    setWalletClientRetryCount(0);
-    setWalletClientReady(false);
-  }, [isConnected]);
 
   // Search for Farcaster users
   useEffect(() => {
@@ -1315,7 +1323,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   }, [searchTerm]);
 
   const handleCreateChallenge = useCallback(async () => {
-    // Better validation with specific error messages
+    // Simple validation like in try.tsx
     if (!selectedUser) {
       setChallengeResult('❌ Please select a user to challenge first');
       return;
@@ -1331,30 +1339,8 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       return;
     }
 
-    console.log('Debug - walletClient:', walletClient);
-    console.log('Debug - walletClientReady:', walletClientReady);
-    console.log('Debug - isWalletClientLoading:', isWalletClientLoading);
-    console.log('Debug - walletClientError:', walletClientError);
-    console.log('Debug - isConnected:', isConnected);
-    console.log('Debug - address:', address);
-
-    if (isWalletClientLoading) {
-      setChallengeResult('🔄 Wallet client is loading. Please wait...');
-      return;
-    }
-
-    if (walletClientError) {
-      setChallengeResult(`❌ Wallet client error: ${walletClientError.message}`);
-      return;
-    }
-
-    if (!walletClientReady || !walletClient) {
-      setChallengeResult('🔄 Wallet client is not ready. Please wait a moment and try again...');
-      
-      // Trigger a retry by incrementing the retry count
-      if (walletClientRetryCount < 3) {
-        setWalletClientRetryCount(prev => prev + 1);
-      }
+    if (!walletClient) {
+      setChallengeResult('❌ Wallet client not available. Please make sure your wallet is connected.');
       return;
     }
 
@@ -1522,7 +1508,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
     } finally {
       setIsCreatingChallenge(false);
     }
-  }, [walletClient, isWalletClientLoading, walletClientError, address, selectedUser, context, betAmount, switchChain]);
+  }, [walletClient, address, selectedUser, context, betAmount, switchChain]);
 
   return (
     <div className="space-y-4">
@@ -1546,30 +1532,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
       {/* Connection Success */}
       {isConnected && address && (
-        <div className="p-2 bg-green-50 dark:bg-green-900 rounded border text-xs">
-          <div className="font-medium text-green-700 dark:text-green-300">
-            ✅ Wallet Connected: {truncateAddress(address)}
+        <div className="p-3 bg-green-900/30 border border-green-500/30 rounded-xl text-xs backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-green-300">
+            <span>✅</span>
+            <span className="font-medium">Wallet Connected: {truncateAddress(address)}</span>
           </div>
-          {!walletClientReady && !isWalletClientLoading && (
-            <div className="text-orange-600 dark:text-orange-400 text-xs mt-1">
-              {walletClientRetryCount > 0 ? (
-                '🔄 Trying to establish wallet connection...'
-              ) : (
-                '⚠️ Wallet client is not ready. This may cause transaction failures.'
-              )}
-            </div>
-          )}
-          {!walletClientReady && !isWalletClientLoading && walletClientRetryCount >= 3 && (
-            <Button
-              onClick={() => {
-                setWalletClientRetryCount(0);
-                setTimeout(() => setWalletClientRetryCount(1), 100);
-              }}
-              className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white text-xs"
-            >
-              🔄 Retry Wallet Connection
-            </Button>
-          )}
         </div>
       )}
 
@@ -1646,7 +1613,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || !walletClientReady || isWalletClientLoading || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || !walletClient || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
@@ -1654,12 +1621,8 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           ? 'Creating Challenge...' 
           : !isConnected 
             ? '❌ Connect Wallet First'
-            : isWalletClientLoading
-              ? '🔄 Loading Wallet Client...'
-            : !walletClientReady
-              ? walletClientRetryCount > 0 
-                ? `🔄 Preparing Wallet... (${walletClientRetryCount}/3)`
-                : '❌ Wallet Client Not Ready'
+            : !walletClient
+              ? '🔄 Wallet Loading...'
             : !selectedUser 
               ? '❌ Select User First'
               : '✅ Create Challenge & Bet USDC'
