@@ -43,7 +43,7 @@ import {
 import { config } from "~/components/providers/WagmiProvider";
 import { Button } from "~/components/ui/Button";
 import { truncateAddress } from "~/lib/truncateAddress";
-import { base, degen, mainnet, monadTestnet, optimism, unichain } from "wagmi/chains";
+import { base, degen, mainnet, monadTestnet, optimism, unichain, arbitrum } from "wagmi/chains";
 import { BaseError, parseEther, UserRejectedRequestError, encodeFunctionData, parseAbi } from "viem";
 import { createStore } from "mipd";
 import { Label } from "~/components/ui/label";
@@ -334,6 +334,18 @@ export default function Demo(
           </p>
         </div>
 
+        {/* Challenge Section */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
+          <div className="text-center mb-4">
+            <h2 className="text-lg font-semibold mb-2">⚔️ Create Challenge</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+              Challenge other players for USDC rewards
+            </p>
+          </div>
+          
+          <CreateChallenge context={context} address={address} />
+        </div>
+
         {/* Main Game Section */}
         <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
           <div className="text-center mb-4">
@@ -344,7 +356,13 @@ export default function Demo(
           </div>
           
           <Button 
-            onClick={() => window.location.href = '/ztype'} 
+            onClick={() => {
+              // If there's an active challenge, pass it to the game
+              const urlParams = new URLSearchParams(window.location.search);
+              const challengeId = urlParams.get('challengeId');
+              const gameUrl = challengeId ? `/ztype?challengeId=${challengeId}` : '/ztype';
+              window.location.href = gameUrl;
+            }} 
             className="w-full mb-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
           >
             🚀 Launch Game
@@ -1234,6 +1252,281 @@ function OpenMiniApp() {
         </div>
       )}
     </>
+  );
+}
+
+function CreateChallenge({ context, address }: { context?: Context.MiniAppContext, address?: string }) {
+  const [betAmount, setBetAmount] = useState('1000000'); // 1 USDC in wei (6 decimals)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [challengeResult, setChallengeResult] = useState('');
+  const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
+  const [createdChallengeId, setCreatedChallengeId] = useState<number | null>(null);
+
+  const { data: walletClient } = useWalletClient();
+  const { switchChain } = useSwitchChain();
+
+  // Search for Farcaster users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (searchTerm.length > 2) {
+        setLoading(true);
+        try {
+          const response = await fetch(`/api/search-users?q=${encodeURIComponent(searchTerm)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUsers(data.users || []);
+          }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setUsers([]);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchUsers, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm]);
+
+  const handleCreateChallenge = useCallback(async () => {
+    if (!walletClient || !address || !selectedUser) {
+      setChallengeResult('Missing wallet, address, or selected user');
+      return;
+    }
+
+    if (!context?.user?.fid) {
+      setChallengeResult('Missing user FID from context');
+      return;
+    }
+
+    setIsCreatingChallenge(true);
+    setChallengeResult('');
+
+    try {
+      // Switch to Arbitrum (chain ID 42161)
+      await switchChain({ chainId: arbitrum.id });
+
+      const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+      const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
+
+      // First create challenge in our database
+      const dbResponse = await fetch('/api/challenges/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creator: address,
+          creatorFid: context.user.fid,
+          creatorName: context.user.displayName || context.user.username || 'Unknown',
+          opponent: selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address,
+          opponentFid: selectedUser.fid,
+          opponentName: selectedUser.display_name || selectedUser.username || 'Unknown',
+          betAmount: betAmount,
+        }),
+      });
+
+      if (!dbResponse.ok) {
+        throw new Error('Failed to create challenge in database');
+      }
+
+      const { challenge } = await dbResponse.json();
+      const challengeId = challenge.id;
+
+      // Prepare USDC approve transaction
+      const approveData = encodeFunctionData({
+        abi: parseAbi(['function approve(address spender, uint256 value) returns (bool)']),
+        functionName: 'approve',
+        args: [TYPING_CHALLENGE_CONTRACT, BigInt(betAmount)],
+      });
+
+      // Prepare createChallenge transaction
+      const createChallengeData = encodeFunctionData({
+        abi: parseAbi(['function createChallenge(uint256 challengeId, address opponent, uint256 betAmount)']),
+        functionName: 'createChallenge',
+        args: [BigInt(challengeId), selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address, BigInt(betAmount)],
+      });
+
+      // Send batch transaction
+      const { id } = await walletClient.sendCalls({
+        account: address as `0x${string}`,
+        chain: arbitrum,
+        calls: [
+          {
+            to: ARBITRUM_USDC as `0x${string}`,
+            value: 0n,
+            data: approveData,
+          },
+          {
+            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
+            value: 0n,
+            data: createChallengeData,
+          },
+        ],
+      });
+
+      // Wait for transaction completion
+      const result = await walletClient.waitForCallsStatus({
+        id,
+        pollingInterval: 1000,
+      });
+
+      if (result.status === 'success') {
+        setChallengeResult(`Challenge created successfully! Challenge ID: ${challengeId}. Now YOU need to play first to set your score. Click the button below to play!`);
+        setCreatedChallengeId(challengeId);
+        
+        // Don't reset form yet - show play button instead
+        // After creator plays, then we'll show the share link
+      } else {
+        setChallengeResult('Transaction failed or pending');
+      }
+
+    } catch (error) {
+      setChallengeResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsCreatingChallenge(false);
+    }
+  }, [walletClient, address, selectedUser, context, betAmount, switchChain]);
+
+  return (
+    <div className="space-y-4">
+      {/* Bet Amount Input */}
+      <div>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Bet Amount (USDC Wei - 6 decimals)
+        </label>
+        <input
+          type="text"
+          value={betAmount}
+          onChange={(e) => setBetAmount(e.target.value)}
+          placeholder="1000000 (1 USDC)"
+          className="w-full p-2 text-xs bg-white dark:bg-gray-700 border rounded"
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          Current: {(parseInt(betAmount) / 1000000).toFixed(6)} USDC
+        </div>
+      </div>
+
+      {/* User Search */}
+      <div>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Search Farcaster User to Challenge
+        </label>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search for Farcaster users..."
+          className="w-full p-2 text-xs bg-white dark:bg-gray-700 border rounded"
+        />
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-xs text-gray-500">Searching users...</div>
+      )}
+
+      {/* Search Results */}
+      {users.length > 0 && (
+        <div className="space-y-2 max-h-40 overflow-y-auto">
+          {users.map((user) => (
+            <div
+              key={user.fid}
+              onClick={() => setSelectedUser(user)}
+              className={`p-2 border rounded cursor-pointer text-xs ${
+                selectedUser?.fid === user.fid
+                  ? 'bg-blue-100 border-blue-300 dark:bg-blue-900'
+                  : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <img
+                  src={user.pfp_url}
+                  alt={user.display_name}
+                  className="w-6 h-6 rounded-full"
+                />
+                <div>
+                  <div className="font-medium">{user.display_name}</div>
+                  <div className="text-gray-500">@{user.username} • FID: {user.fid}</div>
+                  <div className="text-gray-400">
+                    ETH: {user.verified_addresses?.eth_addresses?.[0] || user.custody_address}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Selected User */}
+      {selectedUser && (
+        <div className="p-2 bg-green-50 dark:bg-green-900 rounded border text-xs">
+          <div className="font-medium text-green-700 dark:text-green-300">
+            Selected: {selectedUser.display_name} (@{selectedUser.username})
+          </div>
+          <div className="text-green-600 dark:text-green-400">
+            Address: {selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address}
+          </div>
+        </div>
+      )}
+
+      {/* Create Challenge Button */}
+      <Button
+        onClick={handleCreateChallenge}
+        disabled={!selectedUser || !address || isCreatingChallenge}
+        isLoading={isCreatingChallenge}
+        className="w-full text-xs bg-green-600 hover:bg-green-700"
+      >
+        {isCreatingChallenge ? 'Creating Challenge...' : 'Create Challenge & Bet USDC'}
+      </Button>
+
+      {/* Result */}
+      {challengeResult && (
+        <div className={`p-2 rounded text-xs ${
+          challengeResult.includes('successfully')
+            ? 'bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300'
+            : 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300'
+        }`}>
+          {challengeResult}
+        </div>
+      )}
+
+      {/* Play Now Button - appears after challenge creation */}
+      {createdChallengeId && (
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border">
+          <div className="text-center mb-3">
+            <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+              🎮 Ready to Set Your Score?
+            </div>
+            <div className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+              Play the game first to set your challenge score. After you play, you can share the challenge with your opponent.
+            </div>
+          </div>
+          <Button
+            onClick={() => window.location.href = `/ztype?challengeId=${createdChallengeId}`}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            🚀 Play Now & Set Your Score
+          </Button>
+          <Button
+            onClick={() => {
+              // Reset form after user has played and can share
+              setCreatedChallengeId(null);
+              setSelectedUser(null);
+              setSearchTerm('');
+              setBetAmount('1000000');
+              setChallengeResult('');
+            }}
+            className="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white text-xs"
+          >
+            🔄 Create New Challenge
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 

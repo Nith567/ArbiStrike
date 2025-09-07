@@ -1,8 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import useSfx from "./webaudio-lite"
 import { wordsEasy, wordsMedium, wordsHard } from "./word-bank"
+import sdk, { type Context } from "@farcaster/miniapp-sdk"
 
 // Palette (5 colors total): cyan primary, amber accent, and neutrals.
 const COLORS = {
@@ -60,6 +62,9 @@ function pointsForKill(word: string, phase: PhaseKey, nextStreak: number) {
 function TypingGameAuto() {
   const wrapRef = useRef<HTMLDivElement>(null)
   const playRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
+  const challengeId = searchParams?.get('challengeId')
+  
   const [running, setRunning] = useState(false)
   const [paused, setPaused] = useState(false)
   const [gameOver, setGameOver] = useState(false)
@@ -71,6 +76,11 @@ function TypingGameAuto() {
   const [finalWpm, setFinalWpm] = useState<number | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [finalErrors, setFinalErrors] = useState<number | null>(null)
+
+  // Challenge-related state
+  const [context, setContext] = useState<Context.MiniAppContext>()
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const [animTick, setAnimTick] = useState(0)
 
@@ -93,6 +103,66 @@ function TypingGameAuto() {
   // Board size
   const [w, setW] = useState(900)
   const [h, setH] = useState(550)
+
+  // Load Farcaster context if in challenge mode
+  useEffect(() => {
+    if (challengeId) {
+      const loadContext = async () => {
+        try {
+          const ctx = await sdk.context
+          setContext(ctx)
+        } catch (error) {
+          console.error('Failed to load Farcaster context:', error)
+        }
+      }
+      loadContext()
+    }
+  }, [challengeId])
+
+  // Submit score for challenge
+  const submitChallengeScore = useCallback(async () => {
+    if (!challengeId || !context || scoreSubmitted) return
+
+    // Get user's wallet address - for now using FID as identifier
+    // In production, you'd get the actual connected wallet address
+    const userAddress = `fid:${context.user.fid}` // Placeholder until wallet integration
+
+    try {
+      const gameDuration = startAtRef.current ? (Date.now() - startAtRef.current) / 1000 : 0
+
+      const response = await fetch('/api/challenges/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: parseInt(challengeId),
+          playerAddress: userAddress,
+          playerFid: context.user.fid,
+          score: finalScore ?? score,
+          wpm: finalWpm ?? 0,
+          accuracy: accuracy,
+          duration: gameDuration,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setScoreSubmitted(true)
+        console.log('Score submitted successfully:', data)
+      } else {
+        const error = await response.text()
+        setSubmitError(`Failed to submit score: ${error}`)
+      }
+    } catch (error) {
+      setSubmitError(`Error submitting score: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }, [challengeId, context, scoreSubmitted, finalScore, score, finalWpm, accuracy])
+
+  // Auto-submit score when game ends in challenge mode
+  useEffect(() => {
+    if (gameOver && challengeId && finalScore !== null && !scoreSubmitted) {
+      submitChallengeScore()
+    }
+  }, [gameOver, challengeId, finalScore, scoreSubmitted, submitChallengeScore])
 
   const resize = useCallback(() => {
     const el = wrapRef.current
@@ -502,6 +572,23 @@ function TypingGameAuto() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/70">
             <div className="w-full max-w-md mx-4 px-6 py-6 rounded-lg border border-white/10 bg-black/50 backdrop-blur">
               <h3 className="text-center text-2xl font-semibold tracking-tight">Mission Report</h3>
+              
+              {/* Challenge Status */}
+              {challengeId && (
+                <div className="mt-4 p-3 rounded border border-cyan-400/30 bg-cyan-400/10">
+                  <div className="text-center text-sm">
+                    <div className="text-cyan-400 font-medium">Challenge #{challengeId}</div>
+                    {scoreSubmitted ? (
+                      <div className="text-green-400 mt-1">✅ Score Submitted Successfully!</div>
+                    ) : submitError ? (
+                      <div className="text-red-400 mt-1">❌ {submitError}</div>
+                    ) : (
+                      <div className="text-yellow-400 mt-1">📤 Submitting score...</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div className="border-t border-white/10 pt-3">
                   <div className="text-white/60">Final Score</div>

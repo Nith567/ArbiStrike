@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { cn } from "~/lib/utils"
 import { wordsEasy, wordsMedium, wordsHard } from "~/components/ztype/words"
 import { playShoot, playHit, playLose, initAudio } from "~/components/ztype/webaudio"
+import sdk, { type Context } from "@farcaster/miniapp-sdk"
 
 type DifficultyKey = "easy" | "medium" | "hard"
 
@@ -82,6 +84,9 @@ export function TypingGame() {
   const [phase, setPhase] = useState<DifficultyKey>("easy")
   const phaseRef = useRef<DifficultyKey>("easy")
 
+  const searchParams = useSearchParams()
+  const challengeId = searchParams?.get('challengeId')
+
   const [menuOpen, setMenuOpen] = useState(true)
   const [paused, setPaused] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -95,6 +100,12 @@ export function TypingGame() {
     return Number.isFinite(v) ? v : 0
   })
   const [audioOn, setAudioOn] = useState(true)
+
+  // Challenge-related state
+  const [context, setContext] = useState<Context.MiniAppContext>()
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [challengeInfo, setChallengeInfo] = useState<any>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -133,6 +144,125 @@ export function TypingGame() {
       alienImgsRef.current = imgs
     })
   }, [])
+
+  // Load Farcaster context if in challenge mode
+  useEffect(() => {
+    if (challengeId) {
+      const loadContext = async () => {
+        try {
+          const ctx = await sdk.context
+          setContext(ctx)
+        } catch (error) {
+          console.error('Failed to load Farcaster context:', error)
+        }
+      }
+      loadContext()
+
+      // Also load challenge info
+      const loadChallengeInfo = async () => {
+        try {
+          const response = await fetch(`/api/challenges/${challengeId}/scores`)
+          if (response.ok) {
+            const data = await response.json()
+            setChallengeInfo(data.challenge)
+          }
+        } catch (error) {
+          console.error('Failed to load challenge info:', error)
+        }
+      }
+      loadChallengeInfo()
+    }
+  }, [challengeId])
+
+  // Submit score for challenge
+  const submitChallengeScore = useCallback(async () => {
+    if (!challengeId || !context || scoreSubmitted) return
+
+    // Get user's wallet address - for now using FID as identifier
+    // In production, you'd get the actual connected wallet address
+    const userAddress = `fid:${context.user.fid}` // Placeholder until wallet integration
+
+    try {
+      const gameDuration = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 : 0
+      const elapsedMin = Math.max(1 / 60, (performance.now() - startTimeRef.current) / 60000)
+      const currentWpm = Math.round(typedCharsRef.current / 5 / elapsedMin)
+
+      const response = await fetch('/api/challenges/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: parseInt(challengeId),
+          playerAddress: userAddress,
+          playerFid: context.user.fid,
+          score: score,
+          wpm: currentWpm,
+          accuracy: Math.round((destroyed / Math.max(1, destroyed + (START_LIVES - lives))) * 100),
+          duration: gameDuration,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setScoreSubmitted(true)
+        console.log('Score submitted successfully:', data)
+        
+        // If this is the creator playing and challenge is in 'created' status, update to 'waiting_opponent'
+        if (challengeInfo && challengeInfo.status === 'created' && context && context.user.fid === challengeInfo.creatorFid) {
+          try {
+            const updateResponse = await fetch(`/api/challenges/${challengeId}/creator-played`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            })
+            
+            if (updateResponse.ok) {
+              const updateData = await updateResponse.json()
+              console.log('Challenge updated to waiting_opponent:', updateData)
+              // Update local challenge info
+              setChallengeInfo(prev => ({ ...prev, status: 'waiting_opponent' }))
+              
+              // Send notification to opponent
+              try {
+                const notifyResponse = await fetch('/api/notify-challenge', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    targetFid: challengeInfo.opponentFid,
+                    challengerName: challengeInfo.creatorName || context.user.displayName || context.user.username || 'Someone',
+                    usdcAmount: (parseInt(challengeInfo.betAmount) / 1000000).toFixed(6),
+                    challengeId: parseInt(challengeId),
+                    challengeUrl: `${window.location.origin}/challenge/${challengeId}`
+                  })
+                })
+                
+                if (notifyResponse.ok) {
+                  const notifyData = await notifyResponse.json()
+                  console.log('Notification sent to opponent:', notifyData)
+                } else {
+                  console.error('Failed to send notification to opponent')
+                }
+              } catch (notifyError) {
+                console.error('Error sending notification:', notifyError)
+              }
+            }
+          } catch (error) {
+            console.error('Failed to update challenge status:', error)
+          }
+        }
+      } else {
+        const error = await response.text()
+        setSubmitError(`Failed to submit score: ${error}`)
+      }
+    } catch (error) {
+      setSubmitError(`Error submitting score: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }, [challengeId, context, scoreSubmitted, score, destroyed, lives])
+
+  // Auto-submit score when game ends in challenge mode
+  useEffect(() => {
+    if (!playing && !menuOpen && challengeId && score > 0 && !scoreSubmitted) {
+      submitChallengeScore()
+    }
+  }, [playing, menuOpen, challengeId, score, scoreSubmitted, submitChallengeScore])
 
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
 
@@ -593,11 +723,23 @@ export function TypingGame() {
               <div className="flex flex-col items-center gap-2">
                 <p className="text-xs tracking-widest text-slate-400">PHOBOSLAB-INSPIRED</p>
                 <h2 className="text-balance text-5xl font-semibold tracking-tight text-slate-200">ZTYPING</h2>
+                {challengeId && (
+                  <div className="mt-2 p-2 rounded border border-cyan-400/30 bg-cyan-400/10">
+                    <div className="text-cyan-400 text-sm font-medium">
+                      🏆 Challenge Mode - ID: {challengeId}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <p className="max-w-xs text-pretty text-sm text-slate-400">
                 Type to lock-on and destroy square alien tiles. The game auto-ramps: Easy → Medium → Hard. Press Esc to
                 pause. Click the play area to focus.
+                {challengeId && (
+                  <span className="block mt-2 text-cyan-400">
+                    🎯 Playing for challenge #{challengeId}. Your score will be automatically submitted!
+                  </span>
+                )}
               </p>
 
               <div className="flex flex-col items-center gap-3">
@@ -605,7 +747,7 @@ export function TypingGame() {
                   onClick={startGame}
                   className="rounded-md bg-amber-500 px-6 py-2 text-base font-medium text-black hover:bg-amber-400"
                 >
-                  Start Game
+                  {challengeId ? "Start Challenge" : "Start Game"}
                 </button>
                 <div className="text-xs text-slate-400">
                   High Score: <span className="text-slate-200">{hiscore}</span>
@@ -632,6 +774,36 @@ export function TypingGame() {
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/75">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="text-2xl font-semibold text-slate-200">Game Over</div>
+              
+              {/* Challenge Status */}
+              {challengeId && (
+                <div className="w-full max-w-sm p-3 rounded border border-cyan-400/30 bg-cyan-400/10">
+                  <div className="text-sm">
+                    <div className="text-cyan-400 font-medium">Challenge #{challengeId}</div>
+                    {scoreSubmitted ? (
+                      <>
+                        <div className="text-green-400 mt-1">✅ Score Submitted Successfully!</div>
+                        {challengeInfo && challengeInfo.status === 'waiting_opponent' && context && context.user.fid === challengeInfo.creatorFid && (
+                          <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded">
+                            <div className="text-green-400 text-xs font-medium mb-1">🎯 Challenge Ready!</div>
+                            <div className="text-xs text-green-300 mb-1">
+                              🔔 Your opponent has been notified!
+                            </div>
+                            <div className="text-xs text-green-400 mt-1">
+                              Share link: {window.location.origin}/challenge/{challengeId}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : submitError ? (
+                      <div className="text-red-400 mt-1">❌ {submitError}</div>
+                    ) : (
+                      <div className="text-yellow-400 mt-1">📤 Submitting score...</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <div className="text-sm text-slate-400">
                 Score <span className="text-slate-200">{score}</span> • Level{" "}
                 <span className="text-slate-200">{level}</span> • WPM <span className="text-slate-200">{wpm}</span>
@@ -648,6 +820,14 @@ export function TypingGame() {
               >
                 Back to Menu
               </button>
+              {challengeId && (
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="text-sm text-slate-300 underline-offset-4 hover:underline"
+                >
+                  Home
+                </button>
+              )}
             </div>
           </div>
         )}
