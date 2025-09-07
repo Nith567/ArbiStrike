@@ -284,7 +284,7 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
 
           {challenge.status === 'accepted' && (
             <Button
-              onClick={() => window.location.href = `/ztype?challengeId=${challenge.id}`}
+              onClick={() => window.location.href = `/ztype?challengeId=${challenge.id}&role=opponent`}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               🚀 Play Challenge Game

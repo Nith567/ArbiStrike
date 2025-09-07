@@ -86,6 +86,7 @@ export function TypingGame() {
 
   const searchParams = useSearchParams()
   const challengeId = searchParams?.get('challengeId')
+  const playerRole = searchParams?.get('role') // 'creator' or 'opponent'
 
   const [menuOpen, setMenuOpen] = useState(true)
   const [paused, setPaused] = useState(false)
@@ -739,6 +740,11 @@ export function TypingGame() {
                   <div className="mt-2 p-2 rounded border border-cyan-400/30 bg-cyan-400/10">
                     <div className="text-cyan-400 text-sm font-medium">
                       🏆 Challenge Mode - ID: {challengeId}
+                      {playerRole && (
+                        <span className="ml-2 px-2 py-1 text-xs rounded bg-cyan-500/20 text-cyan-300">
+                          {playerRole === 'creator' ? '👑 Creator' : '⚔️ Challenger'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -749,7 +755,7 @@ export function TypingGame() {
                 pause. Click the play area to focus.
                 {challengeId && (
                   <span className="block mt-2 text-cyan-400">
-                    🎯 Playing for challenge #{challengeId}. Your score will be automatically submitted!
+                    🎯 Playing for challenge #{challengeId} as {playerRole === 'creator' ? '👑 Creator' : '⚔️ Challenger'}. Your score will be automatically submitted!
                   </span>
                 )}
               </p>

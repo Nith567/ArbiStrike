@@ -1267,9 +1267,12 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   const [challengeResult, setChallengeResult] = useState('');
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [createdChallengeId, setCreatedChallengeId] = useState<number | null>(null);
+  const [challengeUrls, setChallengeUrls] = useState<{creatorPlay: string, opponentChallenge: string} | null>(null);
 
   const { data: walletClient } = useWalletClient();
   const { switchChain } = useSwitchChain();
+  const { isConnected } = useAccount();
+  const { connect } = useConnect();
 
   // Search for Farcaster users
   useEffect(() => {
@@ -1297,18 +1300,29 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   }, [searchTerm]);
 
   const handleCreateChallenge = useCallback(async () => {
-    if (!walletClient || !address || !selectedUser) {
-      setChallengeResult('Missing wallet, address, or selected user');
+    // Better validation with specific error messages
+    if (!selectedUser) {
+      setChallengeResult('❌ Please select a user to challenge first');
+      return;
+    }
+
+    if (!address) {
+      setChallengeResult('❌ Please connect your wallet first');
+      return;
+    }
+
+    if (!walletClient) {
+      setChallengeResult('❌ Wallet client not available. Please refresh and try again');
       return;
     }
 
     if (!context?.user?.fid) {
-      setChallengeResult('Missing user FID from context');
+      setChallengeResult('❌ Missing user FID from Farcaster context');
       return;
     }
 
     setIsCreatingChallenge(true);
-    setChallengeResult('');
+    setChallengeResult('🔄 Creating challenge and placing bet...');
 
     try {
       // Switch to Arbitrum (chain ID 42161)
@@ -1378,6 +1392,9 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       });
 
       if (result.status === 'success') {
+        const creatorPlayUrl = `${window.location.origin}/ztype?challengeId=${challengeId}&role=creator`;
+        const opponentChallengeUrl = `${window.location.origin}/challenge/${challengeId}`;
+        
         setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
         
 💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
@@ -1386,8 +1403,12 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 🎮 NEXT STEP: You need to play first to set your score!`);
         setCreatedChallengeId(challengeId);
         
-        // Don't reset form yet - show play button instead
-        // After creator plays, then we'll show the share link
+        // Store URLs for buttons
+        setChallengeUrls({
+          creatorPlay: creatorPlayUrl,
+          opponentChallenge: opponentChallengeUrl
+        });
+        
       } else {
         setChallengeResult('❌ Transaction failed or pending. Please try again.');
       }
@@ -1401,6 +1422,33 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
   return (
     <div className="space-y-4">
+      {/* Wallet Connection Status */}
+      {!isConnected && (
+        <div className="p-3 bg-yellow-50 dark:bg-yellow-900 rounded border text-xs">
+          <div className="font-medium text-yellow-700 dark:text-yellow-300 mb-2">
+            ⚠️ Wallet Not Connected
+          </div>
+          <div className="text-yellow-600 dark:text-yellow-400 mb-2">
+            You need to connect your wallet to create challenges and bet USDC.
+          </div>
+          <Button
+            onClick={() => connect({ connector: config.connectors[0] })}
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-xs"
+          >
+            🔗 Connect Wallet
+          </Button>
+        </div>
+      )}
+
+      {/* Connection Success */}
+      {isConnected && address && (
+        <div className="p-2 bg-green-50 dark:bg-green-900 rounded border text-xs">
+          <div className="font-medium text-green-700 dark:text-green-300">
+            ✅ Wallet Connected: {truncateAddress(address)}
+          </div>
+        </div>
+      )}
+
       {/* Bet Amount Input */}
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1490,11 +1538,18 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
-        {isCreatingChallenge ? 'Creating Challenge...' : 'Create Challenge & Bet USDC'}
+        {isCreatingChallenge 
+          ? 'Creating Challenge...' 
+          : !isConnected 
+            ? '❌ Connect Wallet First'
+            : !selectedUser 
+              ? '❌ Select User First'
+              : '✅ Create Challenge & Bet USDC'
+        }
       </Button>
 
       {/* Result */}
@@ -1509,7 +1564,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       )}
 
       {/* Play Now Button - appears after challenge creation */}
-      {createdChallengeId && (
+      {createdChallengeId && challengeUrls && (
         <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border">
           <div className="text-center mb-3">
             <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
@@ -1519,16 +1574,49 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
               Play the game first to set your challenge score. After you play, you can share the challenge with your opponent.
             </div>
           </div>
+          
+          {/* Creator Play Button */}
           <Button
-            onClick={() => window.location.href = `/ztype?challengeId=${createdChallengeId}`}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => window.location.href = challengeUrls.creatorPlay}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white mb-2"
           >
             🚀 Play Now & Set Your Score
           </Button>
+          
+          {/* URLs Display */}
+          <div className="text-xs text-blue-600 dark:text-blue-400 mb-3 p-2 bg-blue-100 dark:bg-blue-800 rounded">
+            <div className="font-medium mb-1">📋 Share These URLs:</div>
+            <div className="mb-1">
+              <span className="font-medium">Your play URL:</span>
+              <div className="font-mono text-xs break-all">{challengeUrls.creatorPlay}</div>
+            </div>
+            <div>
+              <span className="font-medium">Opponent URL:</span>
+              <div className="font-mono text-xs break-all">{challengeUrls.opponentChallenge}</div>
+            </div>
+          </div>
+          
+          {/* Copy buttons */}
+          <div className="space-y-2 mb-3">
+            <Button
+              onClick={() => navigator.clipboard.writeText(challengeUrls.creatorPlay)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white text-xs"
+            >
+              � Copy Your Play URL
+            </Button>
+            <Button
+              onClick={() => navigator.clipboard.writeText(challengeUrls.opponentChallenge)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs"
+            >
+              📋 Copy Opponent Challenge URL
+            </Button>
+          </div>
+          
           <Button
             onClick={() => {
               // Reset form after user has played and can share
               setCreatedChallengeId(null);
+              setChallengeUrls(null);
               setSelectedUser(null);
               setSearchTerm('');
               setBetAmount('1000000');

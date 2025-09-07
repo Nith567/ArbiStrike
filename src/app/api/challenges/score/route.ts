@@ -33,14 +33,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if challenge is accepted (ready for gameplay)
-    if (challenge.status !== 'accepted') {
-      return NextResponse.json(
-        { error: 'Challenge must be accepted before submitting scores' },
-        { status: 400 }
-      );
-    }
-
     // Verify the player is part of this challenge
     const isCreator = challenge.creator === playerAddress && challenge.creatorFid === playerFid;
     const isOpponent = challenge.opponent === playerAddress && challenge.opponentFid === playerFid;
@@ -49,6 +41,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Player is not part of this challenge' },
         { status: 403 }
+      );
+    }
+
+    // Check if challenge allows score submission
+    // Creator can play when status is 'waiting_opponent'
+    // Opponent can play when status is 'accepted'
+    if (isCreator && challenge.status !== 'waiting_opponent') {
+      return NextResponse.json(
+        { error: 'Creator can only submit score when challenge is waiting for opponent' },
+        { status: 400 }
+      );
+    }
+    
+    if (isOpponent && challenge.status !== 'accepted') {
+      return NextResponse.json(
+        { error: 'Opponent can only submit score when challenge is accepted' },
+        { status: 400 }
       );
     }
 
