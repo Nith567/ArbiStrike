@@ -42,19 +42,29 @@ export async function POST(request: NextRequest) {
     console.log('challenge.opponent:', challenge.opponent);
     console.log('challenge.opponentFid:', challenge.opponentFid);
 
-    // Verify the player is part of this challenge
-    const isCreator = challenge.creator === playerAddress && challenge.creatorFid === playerFid;
-    const isOpponent = challenge.opponent === playerAddress && challenge.opponentFid === playerFid;
+    // Verify the player is part of this challenge by FID (more reliable than address)
+    const isCreator = challenge.creatorFid === playerFid;
+    const isOpponent = challenge.opponentFid === playerFid;
     
-    console.log('isCreator:', isCreator);
-    console.log('isOpponent:', isOpponent);
+    console.log('isCreator (by FID):', isCreator);
+    console.log('isOpponent (by FID):', isOpponent);
     
     if (!isCreator && !isOpponent) {
-      console.log('VALIDATION FAILED: Player not part of challenge');
+      console.log('VALIDATION FAILED: Player FID not part of challenge');
       return NextResponse.json(
         { error: 'Player is not part of this challenge' },
         { status: 403 }
       );
+    }
+
+    // Use the correct address from database instead of trusting submitted address
+    let actualPlayerAddress = playerAddress;
+    if (isCreator) {
+      actualPlayerAddress = challenge.creator;
+      console.log('Player is creator, using database address:', actualPlayerAddress);
+    } else if (isOpponent) {
+      actualPlayerAddress = challenge.opponent;
+      console.log('Player is opponent, using database address:', actualPlayerAddress);
     }
 
     // Check if challenge allows score submission
@@ -77,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Create the score record
     const gameScore: GameScore = {
       challengeId,
-      playerAddress,
+      playerAddress: actualPlayerAddress, // Use the correct address from database
       playerFid,
       score,
       wpm,

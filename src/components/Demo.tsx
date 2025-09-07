@@ -1657,7 +1657,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           <div className="text-green-600 dark:text-green-400">
             <span className="font-medium">Wallet:</span> 
             <div className="font-mono mt-1 p-1 bg-green-100 dark:bg-green-800 rounded text-xs break-all">
-              {selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address}
+              {selectedUser.custody_address}
             </div>
           </div>
         </div>
