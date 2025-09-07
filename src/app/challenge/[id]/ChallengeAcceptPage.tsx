@@ -43,21 +43,23 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
 
   // Load Farcaster context
   useEffect(() => {
-    const loadContext = async () => {
+    const load = async () => {
       try {
         const ctx = await sdk.context;
         setContext(ctx);
         
         // Set up SDK ready
         sdk.actions.ready({});
+        setIsSDKLoaded(true);
       } catch (error) {
         console.error('Failed to load Farcaster context:', error);
+        // Still set SDK as loaded even if context fails, so page can continue
+        setIsSDKLoaded(true);
       }
     };
 
     if (sdk && !isSDKLoaded) {
-      setIsSDKLoaded(true);
-      loadContext();
+      load();
       return () => {
         sdk.removeAllListeners();
       };
@@ -82,10 +84,11 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
       }
     };
 
-    if (challengeId) {
+    // Only load challenge after SDK is ready
+    if (challengeId && isSDKLoaded) {
       loadChallenge();
     }
-  }, [challengeId]);
+  }, [challengeId, isSDKLoaded]);
 
   const handleAcceptChallenge = useCallback(async () => {
     if (!walletClient || !address || !challenge || !context) {
@@ -170,12 +173,14 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
     }
   }, [walletClient, address, challenge, context, challengeId, switchChain]);
 
-  if (loading) {
+  if (!isSDKLoaded || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center">
           <div className="text-2xl">🎮</div>
-          <div className="mt-2">Loading challenge...</div>
+          <div className="mt-2">
+            {!isSDKLoaded ? 'Loading SDK...' : 'Loading challenge...'}
+          </div>
         </div>
       </div>
     );

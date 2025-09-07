@@ -191,14 +191,37 @@ export function TypingGame() {
   const submitChallengeScore = useCallback(async () => {
     if (!challengeId || !context || scoreSubmitted) return
 
-    // Get user's wallet address - for now using FID as identifier
-    // In production, you'd get the actual connected wallet address
-    const userAddress = `fid:${context.user.fid}` // Placeholder until wallet integration
+    // Get user's wallet address from challenge info
+    let userAddress = ''
+    if (challengeInfo) {
+      // Check if this user is the creator or opponent based on their FID
+      if (context.user.fid === challengeInfo.creatorFid) {
+        userAddress = challengeInfo.creator
+      } else if (context.user.fid === challengeInfo.opponentFid) {
+        userAddress = challengeInfo.opponent
+      } else {
+        console.error('User FID does not match creator or opponent FID')
+        return
+      }
+    } else {
+      console.error('Challenge info not available')
+      return
+    }
 
     try {
       const gameDuration = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 : 0
       const elapsedMin = Math.max(1 / 60, (performance.now() - startTimeRef.current) / 60000)
       const currentWpm = Math.round(typedCharsRef.current / 5 / elapsedMin)
+
+      console.log('Submitting score with:', {
+        challengeId: parseInt(challengeId),
+        playerAddress: userAddress,
+        playerFid: context.user.fid,
+        score: score,
+        wpm: currentWpm,
+        accuracy: Math.round((destroyed / Math.max(1, destroyed + (START_LIVES - lives))) * 100),
+        duration: gameDuration,
+      })
 
       const response = await fetch('/api/challenges/score', {
         method: 'POST',
@@ -268,7 +291,7 @@ export function TypingGame() {
     } catch (error) {
       setSubmitError(`Error submitting score: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [challengeId, context, scoreSubmitted, score, destroyed, lives])
+  }, [challengeId, context, scoreSubmitted, score, destroyed, lives, challengeInfo])
 
   // Auto-submit score when game ends in challenge mode
   useEffect(() => {

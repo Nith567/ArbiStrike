@@ -1475,16 +1475,16 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
           if (notifyResponse.ok) {
             setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
-            
-💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+
+💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
 🔔 Notification sent to opponent!
 
 🎮 NEXT STEP: You need to play first to set your score!`);
           } else {
             setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
-            
-💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+
+💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
 ⚠️ Challenge created but notification failed to send
 
