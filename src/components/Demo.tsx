@@ -1631,61 +1631,62 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
       {/* Result */}
       {challengeResult && (
-        <div className={`p-2 rounded text-xs ${
+        <div className={`mt-3 p-4 rounded-xl backdrop-blur-sm border text-sm ${
           challengeResult.includes('successfully')
-            ? 'bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300'
-            : 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300'
+            ? 'bg-green-900/30 border-green-500/30 text-green-300'
+            : 'bg-red-900/30 border-red-500/30 text-red-300'
         }`}>
-          {challengeResult}
+          <div className="flex items-center gap-2">
+            <span className="text-lg">
+              {challengeResult.includes('successfully') ? '🎉' : '❌'}
+            </span>
+            <span className="font-medium">{challengeResult}</span>
+          </div>
         </div>
       )}
 
       {/* Play Now Button - appears after challenge creation */}
       {createdChallengeId && challengeUrls && (
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border">
-          <div className="text-center mb-3">
-            <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
-              🎮 Ready to Set Your Score?
+        <div className="mt-4 p-6 bg-gradient-to-br from-blue-900/40 to-purple-900/20 rounded-2xl border border-blue-500/20 backdrop-blur-sm">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4">
+              <span className="text-2xl">🎮</span>
             </div>
-            <div className="text-xs text-blue-600 dark:text-blue-400 mb-3">
-              Play the game first to set your challenge score. After you play, you can share the challenge with your opponent.
-            </div>
+            <h3 className="text-lg font-bold mb-2 text-white">Battle Ready!</h3>
+            <p className="text-gray-400 text-sm">
+              Time to set your challenge score and dominate the arena
+            </p>
           </div>
           
           {/* Creator Play Button */}
           <Button
             onClick={() => window.location.href = challengeUrls.creatorPlay}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white mb-2"
+            className="w-full mb-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
           >
-            🚀 Play Now & Set Your Score
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-xl">🚀</span>
+              <span>Play Now & Set Your Score</span>
+            </span>
           </Button>
           
-          {/* URLs Display */}
-          <div className="text-xs text-blue-600 dark:text-blue-400 mb-3 p-2 bg-blue-100 dark:bg-blue-800 rounded">
-            <div className="font-medium mb-1">📋 Share These URLs:</div>
-            <div className="mb-1">
-              <span className="font-medium">Your play URL:</span>
-              <div className="font-mono text-xs break-all">{challengeUrls.creatorPlay}</div>
+          {/* Share opponent challenge */}
+          <div className="space-y-3 mb-4">
+            <div className="text-center">
+              <p className="text-gray-400 text-sm mb-3">
+                Share this challenge with your opponent:
+              </p>
             </div>
-            <div>
-              <span className="font-medium">Opponent URL:</span>
-              <div className="font-mono text-xs break-all">{challengeUrls.opponentChallenge}</div>
-            </div>
-          </div>
-          
-          {/* Copy buttons */}
-          <div className="space-y-2 mb-3">
             <Button
-              onClick={() => navigator.clipboard.writeText(challengeUrls.creatorPlay)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white text-xs"
+              onClick={() => {
+                navigator.clipboard.writeText(challengeUrls.opponentChallenge);
+                // Optional: Show a toast or temporary feedback
+              }}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105"
             >
-              � Copy Your Play URL
-            </Button>
-            <Button
-              onClick={() => navigator.clipboard.writeText(challengeUrls.opponentChallenge)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs"
-            >
-              📋 Copy Opponent Challenge URL
+              <span className="flex items-center justify-center gap-2">
+                <span className="text-lg">📋</span>
+                <span>Copy Opponent Challenge URL</span>
+              </span>
             </Button>
           </div>
           
@@ -1699,9 +1700,12 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
               setBetAmount('1');
               setChallengeResult('');
             }}
-            className="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white text-xs"
+            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white py-3 rounded-xl transition-all duration-300"
           >
-            🔄 Create New Challenge
+            <span className="flex items-center justify-center gap-2">
+              <span>🔄</span>
+              <span>Create New Challenge</span>
+            </span>
           </Button>
         </div>
       )}
