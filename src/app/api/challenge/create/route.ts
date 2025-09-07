@@ -3,25 +3,28 @@ import { createChallenge } from '~/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { creator, creatorFid, betAmount } = body;
+    const { creator, creatorFid, creatorName, opponent, opponentFid, opponentName, betAmount } = body;
     
-    if (!creator || !creatorFid || !betAmount) {
+    if (!creator || !creatorFid || !opponent || !opponentFid || !betAmount) {
       return NextResponse.json(
-        { error: 'Missing required fields: creator, creatorFid, betAmount' },
+        { error: 'Missing required fields: creator, creatorFid, opponent, opponentFid, betAmount' },
         { status: 400 }
       );
     }
     
-    const challenge = createChallenge({
+    const challenge = await createChallenge({
       creator,
       creatorFid,
+      creatorName,
+      opponent,
+      opponentFid,
+      opponentName,
       betAmount,
-      status: 'pending'
+      status: 'waiting_opponent'
     });
     
     return NextResponse.json({
       success: true,
-      challengeId: challenge.id,
       challenge
     });
     

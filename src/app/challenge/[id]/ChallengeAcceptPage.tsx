@@ -25,12 +25,12 @@ interface Challenge {
 }
 
 interface ChallengeAcceptPageProps {
-  challengeId: string;
+  challenge: Challenge;
 }
 
-export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPageProps) {
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ChallengeAcceptPage({ challenge: initialChallenge }: ChallengeAcceptPageProps) {
+  const [challenge, setChallenge] = useState<Challenge | null>(initialChallenge);
+  const [loading, setLoading] = useState(false); // Start with false since we have initial data
   const [error, setError] = useState<string | null>(null);
   const [context, setContext] = useState<Context.MiniAppContext>();
   const [isAccepting, setIsAccepting] = useState(false);
@@ -66,16 +66,19 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
     }
   }, [isSDKLoaded]);
 
-  // Load challenge data
+  // Load challenge data (refresh from server)
   useEffect(() => {
     const loadChallenge = async () => {
+      if (!challenge) return;
+      
       try {
-        const response = await fetch(`/api/challenges/${challengeId}/scores`);
+        setLoading(true);
+        const response = await fetch(`/api/challenges/${challenge.id}/scores`);
         if (response.ok) {
           const data = await response.json();
           setChallenge(data.challenge);
         } else {
-          setError('Challenge not found');
+          setError('Failed to refresh challenge data');
         }
       } catch (err) {
         setError('Failed to load challenge');
@@ -84,11 +87,11 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
       }
     };
 
-    // Only load challenge after SDK is ready
-    if (challengeId && isSDKLoaded) {
+    // Only refresh challenge after SDK is ready and we have initial challenge
+    if (challenge && isSDKLoaded) {
       loadChallenge();
     }
-  }, [challengeId, isSDKLoaded]);
+  }, [challenge?.id, isSDKLoaded]);
 
   const handleAcceptChallenge = useCallback(async () => {
     if (!walletClient || !address || !challenge || !context) {
@@ -107,7 +110,7 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
 
       // First update challenge in our database
-      const dbResponse = await fetch(`/api/challenges/${challengeId}/accept`, {
+      const dbResponse = await fetch(`/api/challenges/${challenge.id}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -171,7 +174,7 @@ export default function ChallengeAcceptPage({ challengeId }: ChallengeAcceptPage
     } finally {
       setIsAccepting(false);
     }
-  }, [walletClient, address, challenge, context, challengeId, switchChain]);
+  }, [walletClient, address, challenge, context, switchChain]);
 
   if (!isSDKLoaded || loading) {
     return (
