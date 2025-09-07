@@ -1401,10 +1401,10 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       console.log('creatorFid:', context.user.fid);
       console.log('selectedUser:', selectedUser);
       console.log('selectedUser.verified_addresses:', selectedUser.verified_addresses);
-      console.log('selectedUser.custody_address:', selectedUser.custody_address);
+      console.log('selectedUser.verified_addresses?.primary?.eth_address:', selectedUser.verified_addresses?.primary?.eth_address);
       
       // Use the exact same logic that displays the address in the UI
-      const opponentAddress =selectedUser.custody_address;
+      const opponentAddress =selectedUser.verified_addresses?.primary?.eth_address;
       console.log('opponentAddress calculated as:', opponentAddress);
       
       // Validate opponent address
@@ -1636,7 +1636,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   <div className="font-medium">{user.display_name}</div>
                   <div className="text-gray-500">@{user.username} • FID: {user.fid}</div>
                   <div className="text-gray-400">
-                    ETH: {user.verified_addresses?.eth_addresses?.[0] || user.custody_address}
+                    ETH: {user.verified_addresses?.primary?.eth_address}
                   </div>
                 </div>
               </div>
@@ -1657,7 +1657,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           <div className="text-green-600 dark:text-green-400">
             <span className="font-medium">Wallet:</span> 
             <div className="font-mono mt-1 p-1 bg-green-100 dark:bg-green-800 rounded text-xs break-all">
-              {selectedUser.custody_address}
+              {selectedUser.verified_addresses?.primary?.eth_address}
             </div>
           </div>
         </div>
