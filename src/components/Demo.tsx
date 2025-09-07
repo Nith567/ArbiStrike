@@ -1404,7 +1404,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       console.log('selectedUser.custody_address:', selectedUser.custody_address);
       
       // Use the exact same logic that displays the address in the UI
-      const opponentAddress = selectedUser.verified_addresses?.eth_addresses?.[0] || selectedUser.custody_address;
+      const opponentAddress =selectedUser.custody_address;
       console.log('opponentAddress calculated as:', opponentAddress);
       
       // Validate opponent address
