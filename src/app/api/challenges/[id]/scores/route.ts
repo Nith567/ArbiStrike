@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Redis } from '@upstash/redis';
 import { getChallengeById } from '~/lib/db';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 export async function GET(
   request: NextRequest,
@@ -14,39 +20,33 @@ export async function GET(
         { status: 400 }
       );
     }
-    
+
+    // Get the challenge from database
     const challenge = await getChallengeById(challengeId);
-    
     if (!challenge) {
       return NextResponse.json(
         { error: 'Challenge not found' },
         { status: 404 }
       );
     }
+
+    // Get scores for both players
+    const creatorScoreKey = `typing-game:score:${challengeId}:${challenge.creatorFid}`;
+    const opponentScoreKey = `typing-game:score:${challengeId}:${challenge.opponentFid}`;
     
-    // Return winner address if challenge is completed
-    if (challenge.status === 'completed' && challenge.winner) {
-      return NextResponse.json({
-        challengeId: challengeId.toString(),
-        winnerAddress: challenge.winner,
-        status: challenge.status
-      });
-    }
-    
-    // For non-completed challenges, return fallback logic
-    // (even challenge IDs get first address, odd get second)
-    const winnerAddress = (challengeId % 2 === 0) 
-      ? '0x8A0d290b2EE35eFde47810CA8fF057e109e4190B'
-      : '0x05Cc73A14C1D667a2dA5cc067c692A012EC7dC16';
-    
+    const creatorScore = await redis.get(creatorScoreKey);
+    const opponentScore = challenge.opponentFid ? await redis.get(opponentScoreKey) : null;
+
     return NextResponse.json({
-      challengeId: challengeId.toString(),
-      winnerAddress: winnerAddress,
-      status: challenge.status
+      challenge,
+      scores: {
+        creator: creatorScore,
+        opponent: opponentScore,
+      },
     });
 
   } catch (error) {
-    console.error('Error getting challenge winner:', error);
+    console.error('Error getting challenge scores:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
