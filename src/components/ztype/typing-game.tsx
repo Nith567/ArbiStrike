@@ -150,6 +150,11 @@ export function TypingGame() {
   // Load Farcaster context if in challenge mode
   useEffect(() => {
     if (challengeId) {
+      console.log('=== DEBUG: ZType game loaded in challenge mode ===');
+      console.log('challengeId:', challengeId);
+      console.log('playerRole:', playerRole);
+      console.log('Current URL:', window.location.href);
+      
       const loadContext = async () => {
         try {
           const ctx = await sdk.context
@@ -174,10 +179,17 @@ export function TypingGame() {
       // Also load challenge info
       const loadChallengeInfo = async () => {
         try {
+          console.log('=== DEBUG: Loading challenge info ===')
+          console.log('challengeId:', challengeId)
           const response = await fetch(`/api/challenges/${challengeId}/scores`)
+          console.log('Challenge API response status:', response.status)
           if (response.ok) {
             const data = await response.json()
+            console.log('Challenge API response data:', data)
             setChallengeInfo(data.challenge)
+            console.log('Set challengeInfo to:', data.challenge)
+          } else {
+            console.error('Challenge API error:', response.status, response.statusText)
           }
         } catch (error) {
           console.error('Failed to load challenge info:', error)
@@ -191,16 +203,30 @@ export function TypingGame() {
   const submitChallengeScore = useCallback(async () => {
     if (!challengeId || !context || scoreSubmitted) return
 
+    console.log('=== DEBUG: Starting score submission ===')
+    console.log('challengeId:', challengeId)
+    console.log('context.user.fid:', context.user.fid)
+    console.log('challengeInfo:', challengeInfo)
+
     // Get user's wallet address from challenge info
     let userAddress = ''
     if (challengeInfo) {
+      console.log('challengeInfo.creatorFid:', challengeInfo.creatorFid)
+      console.log('challengeInfo.opponentFid:', challengeInfo.opponentFid)
+      console.log('challengeInfo.creator:', challengeInfo.creator)
+      console.log('challengeInfo.opponent:', challengeInfo.opponent)
+      
       // Check if this user is the creator or opponent based on their FID
       if (context.user.fid === challengeInfo.creatorFid) {
         userAddress = challengeInfo.creator
+        console.log('User identified as creator, userAddress:', userAddress)
       } else if (context.user.fid === challengeInfo.opponentFid) {
         userAddress = challengeInfo.opponent
+        console.log('User identified as opponent, userAddress:', userAddress)
       } else {
         console.error('User FID does not match creator or opponent FID')
+        console.error('Expected:', challengeInfo.creatorFid, 'or', challengeInfo.opponentFid)
+        console.error('Got:', context.user.fid)
         return
       }
     } else {

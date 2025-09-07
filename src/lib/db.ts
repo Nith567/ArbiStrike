@@ -68,8 +68,22 @@ export async function acceptChallenge(id: number, opponent: string, opponentFid:
     return null;
   }
   
-  challenge.opponent = opponent;
-  challenge.opponentFid = opponentFid;
+  // If opponent data already exists, validate that the accepter matches
+  // Otherwise, set the opponent data (for backwards compatibility)
+  if (challenge.opponent && challenge.opponentFid) {
+    // Validate that the person accepting matches the intended opponent
+    if (challenge.opponentFid !== opponentFid) {
+      console.log('Challenge accept validation failed: FID mismatch');
+      console.log('Expected:', challenge.opponentFid, 'Got:', opponentFid);
+      return null;
+    }
+    // Don't overwrite opponent address - keep the original one from challenge creation
+  } else {
+    // For backwards compatibility with challenges that don't have opponent data yet
+    challenge.opponent = opponent;
+    challenge.opponentFid = opponentFid;
+  }
+  
   challenge.status = 'accepted';
   challenge.acceptedAt = new Date();
   

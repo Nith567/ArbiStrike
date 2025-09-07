@@ -33,11 +33,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('=== DEBUG: Score submission validation ===');
+    console.log('challengeId:', challengeId);
+    console.log('playerAddress:', playerAddress);
+    console.log('playerFid:', playerFid);
+    console.log('challenge.creator:', challenge.creator);
+    console.log('challenge.creatorFid:', challenge.creatorFid);
+    console.log('challenge.opponent:', challenge.opponent);
+    console.log('challenge.opponentFid:', challenge.opponentFid);
+
     // Verify the player is part of this challenge
     const isCreator = challenge.creator === playerAddress && challenge.creatorFid === playerFid;
     const isOpponent = challenge.opponent === playerAddress && challenge.opponentFid === playerFid;
     
+    console.log('isCreator:', isCreator);
+    console.log('isOpponent:', isOpponent);
+    
     if (!isCreator && !isOpponent) {
+      console.log('VALIDATION FAILED: Player not part of challenge');
       return NextResponse.json(
         { error: 'Player is not part of this challenge' },
         { status: 403 }

@@ -94,8 +94,21 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   }, [challenge?.id, isSDKLoaded]);
 
   const handleAcceptChallenge = useCallback(async () => {
+    console.log('=== DEBUG: Accept Challenge Debug ===');
+    console.log('walletClient:', !!walletClient);
+    console.log('address:', address);
+    console.log('challenge:', !!challenge);
+    console.log('context:', !!context);
+    console.log('isConnected:', isConnected);
+    
     if (!walletClient || !address || !challenge || !context) {
-      setAcceptResult('Missing wallet, address, challenge, or context');
+      const missing = [];
+      if (!walletClient) missing.push('walletClient');
+      if (!address) missing.push('address');
+      if (!challenge) missing.push('challenge');
+      if (!context) missing.push('context');
+      
+      setAcceptResult(`Missing: ${missing.join(', ')}. Please connect your wallet and try again.`);
       return;
     }
 
@@ -215,6 +228,19 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
           <p className="text-gray-400">Challenge #{challenge.id}</p>
         </div>
 
+        {/* Debug Info (remove in production) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-800 rounded-lg p-4 mb-6 text-xs">
+            <h3 className="text-yellow-400 mb-2">Debug Info:</h3>
+            <div>isConnected: {String(isConnected)}</div>
+            <div>address: {address || 'null'}</div>
+            <div>walletClient: {walletClient ? 'available' : 'null'}</div>
+            <div>context: {context ? 'available' : 'null'}</div>
+            <div>challenge: {challenge ? 'available' : 'null'}</div>
+            <div>isSDKLoaded: {String(isSDKLoaded)}</div>
+          </div>
+        )}
+
         {/* Challenge Details */}
         <div className="bg-gray-900 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Challenge Details</h2>
@@ -273,8 +299,30 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
               {!isConnected ? (
                 <div className="text-center">
                   <p className="text-gray-400 mb-4">Connect your wallet to accept this challenge</p>
-                  <Button className="w-full">
+                  <Button 
+                    onClick={() => {
+                      // Trigger wallet connection
+                      if (typeof window !== 'undefined' && (window as any).ethereum) {
+                        (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+                      }
+                    }}
+                    className="w-full"
+                  >
                     Connect Wallet
+                  </Button>
+                </div>
+              ) : !walletClient ? (
+                <div className="text-center">
+                  <p className="text-gray-400 mb-4">Setting up wallet client...</p>
+                  <Button disabled className="w-full">
+                    Wallet Client Loading...
+                  </Button>
+                </div>
+              ) : !context ? (
+                <div className="text-center">
+                  <p className="text-gray-400 mb-4">Loading Farcaster context...</p>
+                  <Button disabled className="w-full">
+                    Loading Context...
                   </Button>
                 </div>
               ) : (
