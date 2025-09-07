@@ -1459,12 +1459,48 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         const creatorPlayUrl = `${window.location.origin}/ztype?challengeId=${challengeId}&role=creator`;
         const opponentChallengeUrl = `${window.location.origin}/challenge/${challengeId}`;
         
-        setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
-        
+        // Send notification to the opponent
+        try {
+          const notifyResponse = await fetch('/api/notify-challenge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targetFid: selectedUser.fid,
+              challengerName: context.user.displayName || context.user.username || 'Unknown',
+              usdcAmount: `${(parseInt(betAmount) / 1000000).toFixed(2)} USDC`,
+              challengeId: challengeId,
+              challengeUrl: opponentChallengeUrl
+            }),
+          });
+
+          if (notifyResponse.ok) {
+            setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+            
 💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
+🔔 Notification sent to opponent!
 
 🎮 NEXT STEP: You need to play first to set your score!`);
+          } else {
+            setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+            
+💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
+⚠️ Challenge created but notification failed to send
+
+🎮 NEXT STEP: You need to play first to set your score!`);
+          }
+        } catch (notifyError) {
+          console.error('Failed to send notification:', notifyError);
+          setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+          
+💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
+⚠️ Challenge created but notification failed to send
+
+🎮 NEXT STEP: You need to play first to set your score!`);
+        }
+        
         setCreatedChallengeId(challengeId);
         
         // Store URLs for buttons
