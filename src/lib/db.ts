@@ -10,9 +10,11 @@ export interface Challenge {
   creator: string;
   creatorFid: number;
   creatorName?: string;
+  creatorPfp?: string;
   opponent?: string;
   opponentFid?: number;
   opponentName?: string;
+  opponentPfp?: string;
   betAmount: string;
   status: 'created' | 'waiting_opponent' | 'accepted' | 'completed';
   winner?: string;

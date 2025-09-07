@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
-import { encodeFunctionData, parseAbi } from 'viem';
+import { encodeFunctionData, parseAbi, formatUnits } from 'viem';
 import sdk, { type Context } from "@farcaster/miniapp-sdk";
 import { Button } from '~/components/ui/Button';
 import { truncateAddress } from '~/lib/truncateAddress';
@@ -13,9 +13,11 @@ interface Challenge {
   creator: string;
   creatorFid: number;
   creatorName?: string;
+  creatorPfp?: string;
   opponent?: string;
   opponentFid?: number;
   opponentName?: string;
+  opponentPfp?: string;
   betAmount: string;
   status: 'created' | 'waiting_opponent' | 'accepted' | 'completed';
   winner?: string;
@@ -245,21 +247,34 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         <div className="bg-gray-900 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Challenge Details</h2>
           
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Creator:</span>
-              <span className="font-mono">
-                {challenge.creatorName ? `${challenge.creatorName} (${truncateAddress(challenge.creator)})` : truncateAddress(challenge.creator)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Creator FID:</span>
-              <span>{challenge.creatorFid}</span>
+          <div className="space-y-4 text-sm">
+            <div>
+              <span className="text-gray-400 block mb-2">Creator:</span>
+              <div className="flex items-center space-x-3">
+                {challenge.creatorPfp && (
+                  <img
+                    src={challenge.creatorPfp}
+                    alt={challenge.creatorName || 'Creator'}
+                    className="w-10 h-10 rounded-full"
+                  />
+                )}
+                <div>
+                  <div className="font-medium text-white">
+                    {challenge.creatorName || 'Unknown'}
+                  </div>
+                  <div className="text-gray-400 font-mono text-xs">
+                    {truncateAddress(challenge.creator)}
+                  </div>
+                  <div className="text-gray-500 text-xs">
+                    FID: {challenge.creatorFid}
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Bet Amount:</span>
               <span className="font-bold text-green-400">
-                {(parseInt(challenge.betAmount) / 1000000).toFixed(6)} USDC
+                {formatUnits(BigInt(challenge.betAmount), 6)} USDC
               </span>
             </div>
             <div className="flex justify-between">

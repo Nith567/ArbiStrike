@@ -44,7 +44,7 @@ import { config } from "~/components/providers/WagmiProvider";
 import { Button } from "~/components/ui/Button";
 import { truncateAddress } from "~/lib/truncateAddress";
 import { base, degen, mainnet, monadTestnet, optimism, unichain, arbitrum } from "wagmi/chains";
-import { BaseError, parseEther, UserRejectedRequestError, encodeFunctionData, parseAbi } from "viem";
+import { BaseError, parseEther, UserRejectedRequestError, encodeFunctionData, parseAbi, parseUnits, formatUnits } from "viem";
 import { createStore } from "mipd";
 import { Label } from "~/components/ui/label";
 
@@ -374,7 +374,7 @@ export default function Demo(
           {/* Add Frame to Client */}
           <div className="border-t pt-3">
             <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Subscribe for game updates & leaderboards
+              Subscribe for game updates & winner updates
             </div>
             {addFrameResult && (
               <div className="mb-2 text-xs p-2 bg-green-50 dark:bg-green-900 rounded border text-green-700 dark:text-green-300">
@@ -1230,7 +1230,7 @@ function OpenMiniApp() {
 }
 
 function CreateChallenge({ context, address }: { context?: Context.MiniAppContext, address?: string }) {
-  const [betAmount, setBetAmount] = useState('1000000'); // 1 USDC in wei (6 decimals)
+  const [betAmount, setBetAmount] = useState('1'); // Human-readable USDC amount
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -1359,6 +1359,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
     setChallengeResult('🔄 Creating challenge and placing bet...');
 
     try {
+      // Validate bet amount
+      if (!betAmount || isNaN(Number(betAmount)) || Number(betAmount) <= 0) {
+        throw new Error('Please enter a valid USDC amount greater than 0');
+      }
+
       // Switch to Arbitrum (chain ID 42161)
       await switchChain({ chainId: arbitrum.id });
 
@@ -1379,8 +1384,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       
       // Validate opponent address
       if (!opponentAddress || !opponentAddress.startsWith('0x')) {
-        throw new Error(`Invalid opponent address: ${opponentAddress}. User must have a verified Ethereum address.`);
+        throw new Error(`Invalid opponent address: ${opponentAddress ? truncateAddress(opponentAddress) : 'None'}. User must have a verified Ethereum address.`);
       }
+      
+      // Convert human-readable USDC amount to wei (6 decimals)
+      const betAmountWei = parseUnits(betAmount, 6).toString();
       
       const dbResponse = await fetch('/api/challenges/create', {
         method: 'POST',
@@ -1389,10 +1397,12 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           creator: address,
           creatorFid: context.user.fid,
           creatorName: context.user.displayName || context.user.username || 'Unknown',
+          creatorPfp: context.user.pfpUrl || '',
           opponent: opponentAddress, // Use the same variable
           opponentFid: selectedUser.fid,
           opponentName: selectedUser.display_name || selectedUser.username || 'Unknown',
-          betAmount: betAmount,
+          opponentPfp: selectedUser.pfp_url || '',
+          betAmount: betAmountWei,
         }),
       });
 
@@ -1407,14 +1417,14 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       const approveData = encodeFunctionData({
         abi: parseAbi(['function approve(address spender, uint256 value) returns (bool)']),
         functionName: 'approve',
-        args: [TYPING_CHALLENGE_CONTRACT, BigInt(betAmount)],
+        args: [TYPING_CHALLENGE_CONTRACT, parseUnits(betAmount, 6)],
       });
 
       // Prepare createChallenge transaction
       const createChallengeData = encodeFunctionData({
         abi: parseAbi(['function createChallenge(uint256 challengeId, address opponent, uint256 betAmount)']),
         functionName: 'createChallenge',
-        args: [BigInt(challengeId), opponentAddress, BigInt(betAmount)], // Use the same variable
+        args: [BigInt(challengeId), opponentAddress, parseUnits(betAmount, 6)],
       });
 
       // Send batch transaction
@@ -1453,7 +1463,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
             body: JSON.stringify({
               targetFid: selectedUser.fid,
               challengerName: context.user.displayName || context.user.username || 'Unknown',
-              usdcAmount: `${(parseInt(betAmount) / 1000000).toFixed(2)} USDC`,
+              usdcAmount: `${betAmount} USDC`,
               challengeId: challengeId,
               challengeUrl: opponentChallengeUrl
             }),
@@ -1480,7 +1490,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           console.error('Failed to send notification:', notifyError);
           setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
           
-💰 USDC bet placed: ${(parseInt(betAmount) / 1000000).toFixed(2)} USDC
+💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
 ⚠️ Challenge created but notification failed to send
 
@@ -1532,14 +1542,6 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           <div className="font-medium text-green-700 dark:text-green-300">
             ✅ Wallet Connected: {truncateAddress(address)}
           </div>
-          <div className="text-green-600 dark:text-green-400 mt-1">
-            Wallet Client: {
-              isWalletClientLoading ? '🔄 Loading...' : 
-              walletClientReady ? '✅ Ready' : 
-              walletClientRetryCount > 0 ? `🔄 Retrying... (${walletClientRetryCount}/3)` :
-              walletClientError ? `❌ Error: ${walletClientError.message}` : '❌ Not Available'
-            }
-          </div>
           {!walletClientReady && !isWalletClientLoading && (
             <div className="text-orange-600 dark:text-orange-400 text-xs mt-1">
               {walletClientRetryCount > 0 ? (
@@ -1566,17 +1568,17 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Bet Amount Input */}
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Bet Amount (USDC Wei - 6 decimals)
+          Bet Amount (USDC)
         </label>
         <input
           type="text"
           value={betAmount}
           onChange={(e) => setBetAmount(e.target.value)}
-          placeholder="1000000 (1 USDC)"
+          placeholder="1.5"
           className="w-full p-2 text-xs bg-white dark:bg-gray-700 border rounded"
         />
         <div className="text-xs text-gray-500 mt-1">
-          Current: {(parseInt(betAmount) / 1000000).toFixed(6)} USDC
+          Current: {betAmount} USDC
         </div>
       </div>
 
@@ -1622,7 +1624,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   <div className="font-medium">{user.display_name}</div>
                   <div className="text-gray-500">@{user.username} • FID: {user.fid}</div>
                   <div className="text-gray-400">
-                    ETH: {user.verified_addresses?.primary?.eth_address}
+                    ETH: {user.verified_addresses?.primary?.eth_address ? truncateAddress(user.verified_addresses.primary.eth_address) : 'Not available'}
                   </div>
                 </div>
               </div>
@@ -1631,23 +1633,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         </div>
       )}
 
-      {/* Selected User */}
-      {selectedUser && (
-        <div className="p-3 bg-green-50 dark:bg-green-900 rounded border text-xs">
-          <div className="font-medium text-green-700 dark:text-green-300 mb-2">
-            ✅ Selected: {selectedUser.display_name} (@{selectedUser.username})
-          </div>
-          <div className="text-green-600 dark:text-green-400 mb-1">
-            <span className="font-medium">FID:</span> {selectedUser.fid}
-          </div>
-          <div className="text-green-600 dark:text-green-400">
-            <span className="font-medium">Wallet:</span> 
-            <div className="font-mono mt-1 p-1 bg-green-100 dark:bg-green-800 rounded text-xs break-all">
-              {selectedUser.verified_addresses?.primary?.eth_address}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Create Challenge Button */}
       <Button
@@ -1739,7 +1725,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
               setChallengeUrls(null);
               setSelectedUser(null);
               setSearchTerm('');
-              setBetAmount('1000000');
+              setBetAmount('1');
               setChallengeResult('');
             }}
             className="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white text-xs"

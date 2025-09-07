@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { formatUnits } from 'viem';
 import { getChallengeById, completeChallenge } from '~/lib/db';
 
 interface GameScore {
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
               winnerFid,
               winnerName: winnerName || 'Unknown',
               loserName: loserName || 'Unknown',
-              usdcAmount: `${(parseInt(challenge.betAmount) / 1000000).toFixed(2)} USDC`,
+              usdcAmount: `${formatUnits(BigInt(challenge.betAmount), 6)} USDC`,
               challengeId,
               finalScore: winnerScore,
               opponentScore: loserScore
@@ -186,6 +187,35 @@ export async function POST(request: NextRequest) {
           }
         } catch (notifyError) {
           console.error('Error sending winner notification:', notifyError);
+          // Don't fail the score submission if notification fails
+        }
+
+        // Send loser notification
+        try {
+          const loserFid = isCreatorWinner ? challenge.opponentFid : challenge.creatorFid;
+          console.log(`Sending loser notification to FID ${loserFid}`);
+          const notifyLoserResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/notify-loser`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              loserFid,
+              loserName: loserName || 'Unknown',
+              winnerName: winnerName || 'Unknown',
+              usdcAmount: `${formatUnits(BigInt(challenge.betAmount), 6)} USDC`,
+              challengeId,
+              loserScore: loserScore,
+              winnerScore: winnerScore
+            }),
+          });
+
+          if (notifyLoserResponse.ok) {
+            const notifyResult = await notifyLoserResponse.json();
+            console.log(`Loser notification sent successfully:`, notifyResult);
+          } else {
+            console.error(`Loser notification failed:`, await notifyLoserResponse.text());
+          }
+        } catch (notifyError) {
+          console.error('Error sending loser notification:', notifyError);
           // Don't fail the score submission if notification fails
         }
       }

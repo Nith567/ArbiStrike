@@ -4,7 +4,7 @@ import { createChallenge } from '~/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { creator, creatorFid, creatorName, opponent, opponentFid, opponentName, betAmount } = body;
+    const { creator, creatorFid, creatorName, creatorPfp, opponent, opponentFid, opponentName, opponentPfp, betAmount } = body;
 
     if (!creator || !creatorFid || !opponent || !opponentFid || !betAmount) {
       return NextResponse.json(
@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
       creator,
       creatorFid,
       creatorName,
+      creatorPfp,
       opponent,
       opponentFid,
       opponentName,
+      opponentPfp,
       betAmount,
       status: 'waiting_opponent' // Changed from 'created' to 'waiting_opponent'
     });
