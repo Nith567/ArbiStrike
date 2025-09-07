@@ -3,26 +3,24 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { targetFid, challengerName, amount, challengeId } = body;
+    const { targetFid, challengerName, usdcAmount, challengeId, challengeUrl } = body;
 
-    if (!targetFid || !challengerName || !amount || !challengeId) {
+    if (!targetFid || !challengerName || !usdcAmount || !challengeId || !challengeUrl) {
       return NextResponse.json(
-        { error: 'Missing required fields: targetFid, challengerName, amount, challengeId' },
+        { error: 'Missing required fields: targetFid, challengerName, usdcAmount, challengeId, challengeUrl' },
         { status: 400 }
       );
     }
-    
+
     // Generate a unique UUID for the notification
     const notificationUUID = crypto.randomUUID();
-    
-    const amountInUSDC = (parseInt(amount) / 1000000).toFixed(6);
     
     const notificationPayload = {
       target_fids: [targetFid],
       notification: {
         title: "🎮 ZTyping Challenge!",
-        body: `${challengerName} is challenging you to a typing battle for ${amountInUSDC} USDC! Think you can beat their score?`,
-        target_url: `https://frames-v2-typing-game-4l9i.vercel.app/challenge/${challengeId}`,
+        body: `${challengerName} is challenging you to a typing battle for ${usdcAmount} USDC! Think you can beat their score? 🚀⌨️`,
+        target_url: challengeUrl,
         uuid: notificationUUID
       }
     };
@@ -48,11 +46,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       uuid: notificationUUID,
-      result
+      result,
+      sentTo: targetFid,
+      challengerName: challengerName,
+      amount: usdcAmount
     });
 
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending challenge notification:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
