@@ -1581,12 +1581,12 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           ? 'Creating Challenge...' 
           : !isConnected 
             ? '❌ Connect Wallet First'
-            : isWalletClientLoading
+            : !selectedUser 
+              ? '❌ Select User First'
+            : isWalletClientLoading && !walletClient
               ? '🔄 Wallet Loading...'
             : !walletClient
               ? '⚠️ Wallet Client Error'
-            : !selectedUser 
-              ? '❌ Select User First'
               : '✅ Create Challenge & Bet USDC'
         }
       </Button>
