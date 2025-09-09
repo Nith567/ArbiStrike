@@ -1309,7 +1309,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
   const [challengeUrls, setChallengeUrls] = useState<{creatorPlay: string, opponentChallenge: string} | null>(null);
   
   // Simple wallet client approach like in try.tsx
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading } = useWalletClient();
   const { switchChain } = useSwitchChain();
   const { isConnected } = useAccount();
   const { connect } = useConnect();
@@ -1630,7 +1630,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || !walletClient || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || isWalletClientLoading || !walletClient || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
@@ -1638,8 +1638,10 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           ? 'Creating Challenge...' 
           : !isConnected 
             ? '❌ Connect Wallet First'
-            : !walletClient
+            : isWalletClientLoading
               ? '🔄 Wallet Loading...'
+            : !walletClient
+              ? '⚠️ Wallet Client Error'
             : !selectedUser 
               ? '❌ Select User First'
               : '✅ Create Challenge & Bet USDC'
