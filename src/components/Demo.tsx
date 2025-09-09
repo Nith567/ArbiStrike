@@ -166,7 +166,6 @@ export default function Demo(
       sdk.on("notificationsDisabled", () => {
         setLastEvent("notificationsDisabled");
         setNotificationDetails(null);
-        setAdded(false); // Mark as not subscribed when notifications are disabled
       });
 
       sdk.on("primaryButtonClicked", () => {
@@ -200,6 +199,24 @@ export default function Demo(
       };
     }
   }, [isSDKLoaded]);
+
+  // Auto-connect wallet if not connected and SDK is loaded
+  useEffect(() => {
+    const autoConnect = async () => {
+      if (isSDKLoaded && !isConnected && config.connectors.length > 0) {
+        try {
+          await connect({ 
+            chainId: arbitrum.id,
+            connector: config.connectors[0] 
+          });
+        } catch (error) {
+          console.log("Auto-connect failed:", error);
+        }
+      }
+    };
+    
+    autoConnect();
+  }, [isSDKLoaded, isConnected, connect]);
 
   const openUrl = useCallback(() => {
     sdk.actions.openUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
@@ -1340,7 +1357,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
     }
 
     if (!walletClient) {
-      setChallengeResult('❌ Wallet client not available. Please make sure your wallet is connected.');
+      setChallengeResult('❌ Wallet client not available. Please Refresh.');
       return;
     }
 
