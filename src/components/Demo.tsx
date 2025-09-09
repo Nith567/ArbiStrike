@@ -27,6 +27,7 @@ import sdk, {
   SignIn as SignInCore,
   type Context,
 } from "@farcaster/miniapp-sdk";
+import { useMiniApp } from '@neynar/react';
 import {
   useAccount,
   useSendTransaction,
@@ -62,24 +63,21 @@ function safeJsonStringify(obj: unknown) {
 export default function Demo(
   { title }: { title?: string } = { title: "Frames v2 Demo" }
 ) {
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<Context.MiniAppContext>();
+  // Use Neynar hooks instead of manual SDK
+  const { isSDKLoaded, context } = useMiniApp();
+  
   const [token, setToken] = useState<string | null>(null);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  const [added, setAdded] = useState(false);
-  const [notificationDetails, setNotificationDetails] =
-    useState<MiniAppNotificationDetails | null>(null);
-
   const [lastEvent, setLastEvent] = useState("");
-
   const [addFrameResult, setAddFrameResult] = useState("");
   const [sendNotificationResult, setSendNotificationResult] = useState("");
 
-  useEffect(() => {
-    setNotificationDetails(context?.client.notificationDetails ?? null);
-  }, [context]);
+  // Check if mini app is added and notifications are enabled using context
+  const hasNotifications = context?.client?.notificationDetails !== undefined;
+  const isAdded = context?.client?.added === true;
+  const notificationDetails = context?.client?.notificationDetails;
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -132,72 +130,22 @@ export default function Demo(
   }, [switchChain, nextChain.id]);
 
   useEffect(() => {
-    const load = async () => {
-      const context = await sdk.context;
-      setContext(context);
-      // Just check if frame is added, not requiring notifications
-      setAdded(context.client.added);
+    // Set up ethereum provider events (keep this part)
+    const setupProviderEvents = async () => {
+      if (isSDKLoaded) {
+        const ethereumProvider = await sdk.wallet.getEthereumProvider();
+        ethereumProvider?.on("chainChanged", (chainId) => {
+          console.log("[ethereumProvider] chainChanged", chainId)
+        })
+        ethereumProvider?.on("connect", (connectInfo) => {
+          console.log("[ethereumProvider] connect", connectInfo);
+        });
 
-      sdk.on("miniAppAdded", ({ notificationDetails }) => {
-        setLastEvent(
-          `miniAppAdded${!!notificationDetails ? ", notifications enabled" : ""}`
-        );
-
-        setAdded(true);
-        if (notificationDetails) {
-          setNotificationDetails(notificationDetails);
-        }
-      });
-
-      sdk.on("miniAppAddRejected", ({ reason }) => {
-        setLastEvent(`miniAppAddRejected, reason ${reason}`);
-      });
-
-      sdk.on("miniAppRemoved", () => {
-        setLastEvent("miniAppRemoved");
-        setAdded(false);
-        setNotificationDetails(null);
-      });
-
-      sdk.on("notificationsEnabled", ({ notificationDetails }) => {
-        setLastEvent("notificationsEnabled");
-        setNotificationDetails(notificationDetails);
-      });
-      sdk.on("notificationsDisabled", () => {
-        setLastEvent("notificationsDisabled");
-        setNotificationDetails(null);
-      });
-
-      sdk.on("primaryButtonClicked", () => {
-        console.log("primaryButtonClicked");
-      });
-
-      const ethereumProvider = await sdk.wallet.getEthereumProvider();
-      ethereumProvider?.on("chainChanged", (chainId) => {
-        console.log("[ethereumProvider] chainChanged", chainId)
-      })
-      ethereumProvider?.on("connect", (connectInfo) => {
-        console.log("[ethereumProvider] connect", connectInfo);
-      });
-
-      sdk.actions.ready({});
-
-      // Set up a MIPD Store, and request Providers.
-      const store = createStore();
-
-      // Subscribe to the MIPD Store.
-      store.subscribe((providerDetails) => {
-        console.log("PROVIDER DETAILS", providerDetails);
-        // => [EIP6963ProviderDetail, EIP6963ProviderDetail, ...]
-      });
+        sdk.actions.ready({});
+      }
     };
-    if (sdk && !isSDKLoaded) {
-      setIsSDKLoaded(true);
-      load();
-      return () => {
-        sdk.removeAllListeners();
-      };
-    }
+
+    setupProviderEvents();
   }, [isSDKLoaded]);
 
   // Auto-connect wallet if not connected and SDK is loaded
@@ -232,16 +180,11 @@ export default function Demo(
 
   const addFrame = useCallback(async () => {
     try {
-      setNotificationDetails(null);
-
       const result = await sdk.actions.addFrame();
-
-      if (result.notificationDetails) {
-        setNotificationDetails(result.notificationDetails);
-      }
+      
       setAddFrameResult(
         result.notificationDetails
-          ? `Added, got notificaton token ${result.notificationDetails.token} and url ${result.notificationDetails.url}`
+          ? `Added, got notification token ${result.notificationDetails.token} and url ${result.notificationDetails.url}`
           : "Added, got no notification details"
       );
     } catch (error) {
@@ -396,7 +339,7 @@ export default function Demo(
             </div>
           </div>
           
-          <CreateChallenge context={context} address={address} />
+          <CreateChallenge context={context || undefined} address={address} />
         </div>
 
         {/* Main Game Section */}
@@ -445,16 +388,16 @@ export default function Demo(
             )}
             <Button 
               onClick={addFrame} 
-              disabled={added}
+              disabled={isAdded}
               className={`w-full text-sm py-3 rounded-xl transition-all duration-300 ${
-                added 
+                isAdded 
                   ? 'bg-green-900/30 border border-green-500/30 text-green-300 cursor-not-allowed' 
                   : 'bg-gradient-to-r from-yellow-600/80 to-orange-600/80 hover:from-yellow-600 hover:to-orange-600 text-white border border-yellow-500/30 hover:scale-105'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
-                <span>{added ? "✅" : "🔔"}</span>
-                <span>{added ? "Notifications Active" : "Enable Battle Alerts"}</span>
+                <span>{isAdded ? "✅" : "🔔"}</span>
+                <span>{isAdded ? "Notifications Active" : "Enable Battle Alerts"}</span>
               </span>
             </Button>
           </div>
