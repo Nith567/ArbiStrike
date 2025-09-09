@@ -40,7 +40,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
   const { switchChain } = useSwitchChain();
 
   // Load Farcaster context
@@ -103,14 +103,33 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
     console.log('context:', !!context);
     console.log('isConnected:', isConnected);
     
-    if (!walletClient || !address || !challenge || !context) {
-      const missing = [];
-      if (!walletClient) missing.push('walletClient');
-      if (!address) missing.push('address');
-      if (!challenge) missing.push('challenge');
-      if (!context) missing.push('context');
-      
-      setAcceptResult(`Missing: ${missing.join(', ')}. Please connect your wallet and try again.`);
+    if (!isConnected || !address) {
+      setAcceptResult('Please connect your wallet first to accept this challenge.');
+      return;
+    }
+    
+    if (isWalletClientLoading) {
+      setAcceptResult('Wallet is connecting... Please wait a moment and try again.');
+      return;
+    }
+    
+    if (walletClientError) {
+      setAcceptResult(`Wallet connection error: ${walletClientError.message}. Please refresh and try again.`);
+      return;
+    }
+    
+    if (!walletClient) {
+      setAcceptResult('Wallet client not ready. Please wait a moment and try again.');
+      return;
+    }
+    
+    if (!challenge) {
+      setAcceptResult('Challenge data not available. Please refresh the page and try again.');
+      return;
+    }
+    
+    if (!context) {
+      setAcceptResult('Farcaster context not loaded. Please refresh the page and try again.');
       return;
     }
 
@@ -193,7 +212,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
   if (!isSDKLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-bounce">🎮</div>
           <div className="text-xl font-semibold mb-2">
@@ -209,7 +228,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
   if (error || !challenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-red-400 mb-2">Challenge Not Found</h1>
@@ -226,7 +245,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -236,11 +255,13 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
         {/* Debug Info (remove in production) */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 mb-6 text-xs border border-gray-700">
+          <div className="bg-gray-900/70 backdrop-blur-sm rounded-lg p-4 mb-6 text-xs border border-gray-600">
             <h3 className="text-yellow-400 mb-2">Debug Info:</h3>
             <div>isConnected: {String(isConnected)}</div>
             <div>address: {address || 'null'}</div>
             <div>walletClient: {walletClient ? 'available' : 'null'}</div>
+            <div>isWalletClientLoading: {String(isWalletClientLoading)}</div>
+            <div>walletClientError: {walletClientError ? walletClientError.message : 'null'}</div>
             <div>context: {context ? 'available' : 'null'}</div>
             <div>challenge: {challenge ? 'available' : 'null'}</div>
             <div>isSDKLoaded: {String(isSDKLoaded)}</div>
@@ -248,7 +269,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         )}
 
         {/* Challenge Details */}
-        <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 mb-6 border border-gray-700">
+        <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-6 mb-6 border border-gray-600">
           <h2 className="text-xl font-semibold mb-4 text-white">Challenge Details</h2>
           
           <div className="space-y-4 text-sm">
@@ -315,9 +336,13 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                   {challenge.creatorName || 'The challenger'} has set their score. You can now accept this challenge and show your typing skills!
                 </div>
               </div>
-              {!isConnected ? (
+              {!isConnected || !walletClient || isWalletClientLoading ? (
                 <div className="text-center">
-                  <p className="text-gray-300 mb-4">🔗 Connect your wallet to accept this challenge</p>
+                  <p className="text-gray-300 mb-4">
+                    {!isConnected ? '🔗 Connect your wallet to accept this challenge' : 
+                     isWalletClientLoading ? '⏳ Wallet connecting...' : 
+                     '⏳ Preparing wallet...'}
+                  </p>
                   <Button 
                     onClick={() => {
                       // Trigger wallet connection
@@ -325,10 +350,16 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                         (window as any).ethereum.request({ method: 'eth_requestAccounts' });
                       }
                     }}
+                    disabled={isConnected && (isWalletClientLoading || !walletClient)}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
-                    🔗 Connect Wallet
+                    {!isConnected ? '🔗 Connect Wallet' : '⏳ Preparing Wallet...'}
                   </Button>
+                  {walletClientError && (
+                    <p className="text-red-400 text-sm mt-2">
+                      Wallet error: {walletClientError.message}
+                    </p>
+                  )}
                 </div>
               ) : !context ? (
                 <div className="text-center">

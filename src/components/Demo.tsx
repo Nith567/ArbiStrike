@@ -1464,7 +1464,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           });
 
           if (notifyResponse.ok) {
-            setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+            setChallengeResult(`🎉 Challenge created successfully!
 
 💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
@@ -1472,7 +1472,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
 🎮 NEXT STEP: You need to play first to set your score!`);
           } else {
-            setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+            setChallengeResult(`🎉 Challenge created successfully! 
 
 💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
@@ -1482,7 +1482,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           }
         } catch (notifyError) {
           console.error('Failed to send notification:', notifyError);
-          setChallengeResult(`🎉 Challenge created successfully! Challenge ID: ${challengeId}
+          setChallengeResult(`🎉 Challenge created successfully! 
           
 💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
