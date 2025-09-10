@@ -16,9 +16,7 @@ export async function POST(request: NextRequest) {
     const notificationUUID = crypto.randomUUID();
     
     // Use transaction hash URL if available, otherwise fallback to challenge URL
-    const targetUrl = transactionHash 
-      ? `https://arbiscan.io/tx/${transactionHash}`
-      : `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`;
+    const targetUrl =`${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`;
     
     const notificationPayload = {
       target_fids: [winnerFid],
