@@ -13,7 +13,7 @@ const frame = {
       name: "ArbiStrike",
       url: appUrl,
       splashImageUrl: `${appUrl}/splash.png`,
-      splashBackgroundColor: "#f6f7f7d",
+      splashBackgroundColor: "#f6f7f7",
     },
   },
 };
