@@ -1833,7 +1833,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   navigator.clipboard.writeText(challengeUrls.opponentChallenge);
                   // You could add a toast notification here
                 }}
-                className="flex-1 py-2 px-2 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
+                className="flex-shrink-0 w-20 py-2 px-1 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-1">
                   <span className="text-xs">📋</span>

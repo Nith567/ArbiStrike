@@ -163,8 +163,6 @@ export async function POST(request: NextRequest) {
 
       // Complete the challenge with the winner
       if (winner) {
-        await completeChallenge(challengeId, winner);
-        
         // Determine winner details for notification
         const isCreatorWinner = winner === challenge.creator;
         const winnerFid = isCreatorWinner ? challenge.creatorFid : challenge.opponentFid;
@@ -193,6 +191,9 @@ export async function POST(request: NextRequest) {
           console.error('Error calling smart contract setWinner:', smartContractError);
           // Don't fail the score submission if smart contract call fails
         }
+
+        // Complete the challenge with winner and transaction hash
+        await completeChallenge(challengeId, winner, transactionHash);
 
         // Send winner notification
         try {

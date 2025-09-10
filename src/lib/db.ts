@@ -18,6 +18,7 @@ export interface Challenge {
   betAmount: string;
   status: 'created' | 'waiting_opponent' | 'accepted' | 'completed';
   winner?: string;
+  transactionHash?: string;
   createdAt: Date;
   acceptedAt?: Date;
   completedAt?: Date;
@@ -98,7 +99,7 @@ export async function acceptChallenge(id: number, opponent: string, opponentFid:
   return challenge;
 }
 
-export async function completeChallenge(id: number, winner: string): Promise<Challenge | null> {
+export async function completeChallenge(id: number, winner: string, transactionHash?: string): Promise<Challenge | null> {
   const challenge = await getChallengeById(id);
   if (!challenge) {
     return null;
@@ -113,6 +114,9 @@ export async function completeChallenge(id: number, winner: string): Promise<Cha
   challenge.winner = winner;
   challenge.status = 'completed';
   challenge.completedAt = new Date();
+  if (transactionHash) {
+    challenge.transactionHash = transactionHash;
+  }
   
   // Update the challenge in Redis
   await redis.set(getChallengeKey(id), challenge);

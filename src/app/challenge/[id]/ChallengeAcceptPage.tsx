@@ -22,6 +22,7 @@ interface Challenge {
   betAmount: string;
   status: 'created' | 'waiting_opponent' | 'accepted' | 'completed';
   winner?: string;
+  transactionHash?: string;
   createdAt: Date;
   acceptedAt?: Date;
   completedAt?: Date;
@@ -157,7 +158,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       });
 
       if (!dbResponse.ok) {
-        throw new Error('Failed to accept challenge in database');
+        throw new Error('Failed to accept challenge, pls refresh and try again');
       }
 
       // Prepare USDC approve transaction
@@ -381,9 +382,33 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
             <div className="text-center bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg p-6 backdrop-blur-sm">
               <div className="text-4xl mb-4">🏆</div>
               <p className="text-green-400 font-bold text-lg mb-2">Challenge Completed!</p>
-              <p className="text-gray-300">
-                Winner: {challenge.winner ? truncateAddress(challenge.winner) : 'Unknown'}
-              </p>
+              <div className="space-y-3">
+                <p className="text-gray-300">
+                  Winner: {(() => {
+                    if (challenge.winner === challenge.creator) {
+                      return challenge.creatorName || 'Creator';
+                    } else if (challenge.winner === challenge.opponent) {
+                      return challenge.opponentName || 'Opponent';
+                    }
+                    return 'Unknown';
+                  })()}
+                </p>
+                {challenge.transactionHash && (
+                  <div className="mt-4">
+                    <p className="text-gray-400 text-sm mb-2">Prize Payment:</p>
+                    <a
+                      href={`https://arbiscan.io/tx/${challenge.transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-sm"
+                    >
+                      <span>�</span>
+                      <span>View Payment Transaction</span>
+                      <span className="text-xs opacity-75">↗</span>
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
