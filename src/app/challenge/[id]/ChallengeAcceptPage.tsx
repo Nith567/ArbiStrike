@@ -338,36 +338,31 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                   {challenge.creatorName || 'The challenger'} has set their score. You can now accept this challenge and show your typing skills!
                 </div>
               </div>
-              {!isConnected || !walletClient ? (
+              {!isConnected ? (
                 <div className="text-center">
                   <p className="text-gray-300 mb-4">
-                    {!isConnected ? '🔗 Connect your wallet to accept this challenge' : 
-                     isWalletClientLoading ? '⏳ Wallet connecting...' : 
-                     '⏳ Preparing wallet...'}
+                    🔗 Connect your wallet to accept this challenge
                   </p>
                   <Button 
-                    onClick={() => connect({ chainId: arbitrum.id, connector: config.connectors[0] })}
-                    disabled={isConnected && (isWalletClientLoading || !walletClient)}
+                    onClick={() => connect({ connector: config.connectors[0] })}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
-                    {!isConnected ? '🔗 Connect Wallet' : '⏳ Preparing Wallet...'}
-                  </Button>
-                </div>
-              ) : !context ? (
-                <div className="text-center">
-                  <p className="text-gray-300 mb-4">🔄 Getting ready...</p>
-                  <Button disabled className="w-full bg-gray-600">
-                    📱 Almost there...
+                    🔗 Connect Wallet
                   </Button>
                 </div>
               ) : (
                 <Button
                   onClick={handleAcceptChallenge}
-                  disabled={isAccepting}
+                  disabled={isAccepting || isWalletClientLoading}
                   isLoading={isAccepting}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
-                  {isAccepting ? '⏳ Accepting Challenge...' : '✅ Accept Challenge & Bet USDC'}
+                  {isAccepting 
+                    ? '⏳ Accepting Challenge...' 
+                    : isWalletClientLoading
+                      ? '⏳ Loading Wallet...'
+                      : '✅ Accept Challenge & Bet USDC'
+                  }
                 </Button>
               )}
             </>
