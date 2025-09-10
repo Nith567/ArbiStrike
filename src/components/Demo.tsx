@@ -60,7 +60,7 @@ function safeJsonStringify(obj: unknown) {
 }
 
 export default function Demo(
-  { title }: { title?: string } = { title: "Frames v2 Demo" }
+  { title }: { title?: string } = { title: "ArbiStrike" }
 ) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.MiniAppContext | null>(null);
