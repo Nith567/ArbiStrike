@@ -1356,11 +1356,6 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       return;
     }
 
-    if (!walletClient) {
-      setChallengeResult('❌ Wallet client not available. Please Refresh.');
-      return;
-    }
-
     if (!context?.user?.fid) {
       setChallengeResult('❌ Missing user FID from Farcaster context');
       return;
@@ -1437,6 +1432,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         functionName: 'createChallenge',
         args: [BigInt(challengeId), opponentAddress, parseUnits(betAmount, 6)],
       });
+
+      // Check wallet client is available before making calls
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please refresh and try again.');
+      }
 
       // Send batch transaction
       const { id } = await walletClient.sendCalls({
@@ -1630,7 +1630,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || isWalletClientLoading || !walletClient || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || isCreatingChallenge}
         isLoading={isCreatingChallenge}
         className="w-full text-xs bg-green-600 hover:bg-green-700"
       >
@@ -1640,10 +1640,6 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
             ? '❌ Connect Wallet First'
             : !selectedUser 
               ? '❌ Select User First'
-            : isWalletClientLoading && !walletClient
-              ? '🔄 Wallet Loading...'
-            : !walletClient
-              ? '⚠️ Wallet Client Error'
               : '✅ Create Challenge & Bet USDC'
         }
       </Button>

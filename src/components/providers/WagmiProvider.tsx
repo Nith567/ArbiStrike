@@ -4,14 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 
 export const config = createConfig({
-  chains: [optimism, base, mainnet, degen, unichain, arbitrum],
+  chains: [ arbitrum],
   transports: {
-    [base.id]: http(),
-    [optimism.id]: http(),
-    [degen.id]: http(),
-    [mainnet.id]: http(),
+
     [arbitrum.id]: http(),
-    [unichain.id]: http(),
   },
   connectors: [farcasterMiniApp()],
 });
