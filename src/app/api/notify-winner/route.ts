@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
     const notificationPayload = {
       target_fids: [winnerFid],
       notification: {
-        title: "🏆 Victory! You Won the ZTyping Challenge!",
-        body: `Congratulations! You defeated ${loserName} and won ${usdcAmount}! ${finalScore ? `Your score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} ${transactionHash ? 'View your payout transaction! 💰' : '🎉💰'}`,
+        title: "🏆 ArbiStrike Winner!",
+        body: `You defeated ${loserName} and won ${usdcAmount} USDC! ${finalScore ? `Score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} 🎉`,
         target_url: targetUrl,
         uuid: notificationUUID
       }
