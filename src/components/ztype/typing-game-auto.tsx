@@ -164,6 +164,31 @@ function TypingGameAuto() {
     }
   }, [gameOver, challengeId, finalScore, scoreSubmitted, submitChallengeScore])
 
+  // Share functionality for normal (non-challenge) games
+  const handleShare = useCallback(async () => {
+    const shareScore = finalScore ?? score
+    const shareWpm = finalWpm ?? 0
+    const shareAccuracy = accuracy
+    const shareWave = Math.max(1, Math.floor(destroyed / 10) + 1) // Calculate wave for sharing
+    
+    const shareText = `🎮 Just scored ${shareScore} points in ArbiStrike! ⚡\n\n🎯 ${shareWpm} WPM typing speed\n📊 ${shareAccuracy}% accuracy\n🔥 ${destroyed} enemies destroyed\n⚔️ Reached Wave ${shareWave}\n\nPlay this epic space typing shooter! 🚀`;
+    
+    try {
+      await sdk.actions.composeCast({
+        text: shareText,
+        embeds: [window.location.href]
+      });
+    } catch (error) {
+      console.error("Failed to share:", error);
+      try {
+        await navigator.clipboard.writeText(shareText + `\n\nPlay at: ${window.location.href}`);
+        console.log("📋 Copied to clipboard!");
+      } catch (clipboardError) {
+        console.error("Failed to copy to clipboard:", clipboardError);
+      }
+    }
+  }, [finalScore, score, finalWpm, accuracy, destroyed])
+
   const resize = useCallback(() => {
     const el = wrapRef.current
     if (!el) return
@@ -621,13 +646,22 @@ function TypingGameAuto() {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-medium border border-white/20 text-white hover:bg-white/10"
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium border border-white/20 text-white hover:bg-white/10"
                 >
                   Home
                 </button>
+                {/* Only show share button for non-challenge games */}
+                {!challengeId && (
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-cyan-600 hover:bg-cyan-700 text-white"
+                  >
+                    Share Score
+                  </button>
+                )}
                 <button
                   onClick={startGame}
-                  className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-medium"
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
                   style={{ background: COLORS.accent, color: "#111" }}
                 >
                   Play again

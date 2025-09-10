@@ -407,23 +407,17 @@ export default function Demo(
           >
             <span className="flex items-center justify-center gap-2">
               <span className="text-xl">🚀</span>
-              <span>Enter Arena</span>
+              <span>Play ArbiStrike</span>
             </span>
           </Button>
 
           {/* Notifications Section */}
           <div className="border-t border-gray-700/50 pt-4">
-            <div className="text-center mb-3">
-              <div className="inline-flex items-center gap-2 text-sm text-gray-400">
-                <span className="text-yellow-400">🔔</span>
-                <span>Battle Notifications</span>
-              </div>
-            </div>
             {addFrameResult && (
               <div className="mb-3 text-xs p-3 bg-green-900/30 border border-green-500/30 rounded-xl text-green-300 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <span>✅</span>
-                  <span>{addFrameResult}</span>
+                  <span>{addFrameResult}</span>.  
                 </div>
               </div>
             )}
@@ -1354,11 +1348,33 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         throw new Error('Please enter a valid USDC amount greater than 0');
       }
 
-      // Switch to Arbitrum (chain ID 42161)
-      await switchChain({ chainId: arbitrum.id });
+      // Validate wallet client first
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please refresh and try again.');
+      }
+
+      if (isWalletClientLoading) {
+        throw new Error('Wallet client is still loading. Please wait a moment and try again.');
+      }
+
+      setChallengeResult('🔄 Switching to Arbitrum network...');
+      
+      // Switch to Arbitrum (chain ID 42161) with proper error handling
+      try {
+        await switchChain({ chainId: arbitrum.id });
+        // Give the network switch a moment to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (switchError: any) {
+        if (switchError?.message?.includes('User rejected')) {
+          throw new Error('Network switch was cancelled. Please approve the network switch to continue.');
+        }
+        throw new Error(`Failed to switch to Arbitrum network: ${switchError?.message || 'Unknown error'}`);
+      }
 
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
+
+      setChallengeResult('🔄 Creating challenge in database...');
 
       // First create challenge in our database
       console.log('=== DEBUG: Creating challenge ===');
@@ -1369,7 +1385,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       console.log('selectedUser.verified_addresses?.primary?.eth_address:', selectedUser.verified_addresses?.primary?.eth_address);
       
       // Use the exact same logic that displays the address in the UI
-      const opponentAddress =selectedUser.verified_addresses?.primary?.eth_address;
+      const opponentAddress = selectedUser.verified_addresses?.primary?.eth_address;
       console.log('opponentAddress calculated as:', opponentAddress);
       
       // Validate opponent address
@@ -1397,11 +1413,14 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       });
 
       if (!dbResponse.ok) {
-        throw new Error('Failed to create challenge in database');
+        const errorText = await dbResponse.text();
+        throw new Error(`Failed to create challenge in database: ${errorText}`);
       }
 
       const { challenge } = await dbResponse.json();
       const challengeId = challenge.id;
+
+      setChallengeResult('🔄 Preparing blockchain transactions...');
 
       // Prepare USDC approve transaction
       const approveData = encodeFunctionData({
@@ -1417,34 +1436,76 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         args: [BigInt(challengeId), opponentAddress, parseUnits(betAmount, 6)],
       });
 
-      // Check wallet client is available before making calls
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please refresh and try again.');
+      setChallengeResult('🔄 Sending transactions... Please confirm in your wallet');
+
+      // Send batch transaction with timeout and better error handling
+      let transactionId: string;
+      try {
+        const txResult = await Promise.race([
+          walletClient.sendCalls({
+            account: address as `0x${string}`,
+            chain: arbitrum,
+            calls: [
+              {
+                to: ARBITRUM_USDC as `0x${string}`,
+                value: 0n,
+                data: approveData,
+              },
+              {
+                to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
+                value: 0n,
+                data: createChallengeData,
+              },
+            ],
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Transaction timeout after 60 seconds')), 60000)
+          )
+        ]) as { id: string };
+        
+        transactionId = txResult.id;
+      } catch (txError: any) {
+        console.error('Transaction error:', txError);
+        
+        if (txError?.message?.includes('User rejected') || 
+            txError?.message?.includes('User denied') ||
+            txError?.message?.includes('User cancelled') ||
+            txError?.code === 4001) {
+          throw new Error('Transaction was cancelled by user. No funds were transferred.');
+        }
+        
+        if (txError?.message?.includes('insufficient funds') || 
+            txError?.message?.includes('insufficient balance')) {
+          throw new Error(`Insufficient USDC balance. You need at least ${betAmount} USDC on Arbitrum.`);
+        }
+        
+        if (txError?.message?.includes('timeout')) {
+          throw new Error('Transaction timed out. Please try again with a higher gas price.');
+        }
+        
+        throw new Error(`Transaction failed: ${txError?.message || 'Unknown transaction error'}`);
       }
 
-      // Send batch transaction
-      const { id } = await walletClient.sendCalls({
-        account: address as `0x${string}`,
-        chain: arbitrum,
-        calls: [
-          {
-            to: ARBITRUM_USDC as `0x${string}`,
-            value: 0n,
-            data: approveData,
-          },
-          {
-            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
-            value: 0n,
-            data: createChallengeData,
-          },
-        ],
-      });
+      setChallengeResult('🔄 Waiting for transaction confirmation...');
 
-      // Wait for transaction completion
-      const result = await walletClient.waitForCallsStatus({
-        id,
-        pollingInterval: 1000,
-      });
+      // Wait for transaction completion with timeout
+      let result;
+      try {
+        result = await Promise.race([
+          walletClient.waitForCallsStatus({
+            id: transactionId,
+            pollingInterval: 2000,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 120000)
+          )
+        ]) as any;
+      } catch (waitError: any) {
+        if (waitError?.message?.includes('timeout')) {
+          throw new Error('Transaction confirmation timed out. The transaction may still be processing. Please check your wallet.');
+        }
+        throw waitError;
+      }
 
       if (result.status === 'success') {
         const creatorPlayUrl = `${window.location.origin}/ztype?challengeId=${challengeId}&role=creator`;
@@ -1453,11 +1514,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         // DON'T send notification yet - only after creator plays and sets score
         setChallengeResult(`🎉 Challenge created successfully!
 
-💰 USDC bet placed: ${betAmount} USDC
-👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
-
-⚠️ IMPORTANT: You must play first to set your challenge score!
-� Opponent will be notified ONLY after you complete your game.`);
+💰 Bet placed: ${betAmount} USDC`);
         
         setCreatedChallengeId(challengeId);
         
@@ -1467,16 +1524,29 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           opponentChallenge: opponentChallengeUrl
         });
         
+      } else if (result.status === 'failed') {
+        throw new Error('Transaction failed on blockchain. Please try again.');
       } else {
-        setChallengeResult('❌ Transaction failed or pending. Please try again.');
+        throw new Error('Transaction status unknown. Please check your wallet for confirmation.');
       }
 
-    } catch (error) {
-      setChallengeResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: any) {
+      console.error('Challenge creation error:', error);
+      
+      // Handle specific error types with user-friendly messages
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      setChallengeResult(`❌ ${errorMessage}`);
     } finally {
       setIsCreatingChallenge(false);
     }
-  }, [walletClient, address, selectedUser, context, betAmount, switchChain]);
+  }, [walletClient, isWalletClientLoading, address, selectedUser, context, betAmount, switchChain]);
 
   return (
     <div className="space-y-4">
@@ -1618,37 +1688,44 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       {/* Create Challenge Button */}
       <Button
         onClick={handleCreateChallenge}
-        disabled={!selectedUser || !address || !isConnected || isCreatingChallenge}
+        disabled={!selectedUser || !address || !isConnected || isCreatingChallenge || isWalletClientLoading}
         isLoading={isCreatingChallenge}
-        className="w-full py-4 text-sm font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
+        className="w-full py-3 text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
       >
         {isCreatingChallenge 
           ? (
             <span className="flex items-center justify-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
               <span>Creating Challenge...</span>
             </span>
           )
-          : !isConnected 
+          : isWalletClientLoading
             ? (
               <span className="flex items-center justify-center gap-2">
-                <span>❌</span>
-                <span>Connect Wallet First</span>
+                <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                <span>Loading Wallet...</span>
               </span>
             )
-            : !selectedUser 
+            : !isConnected 
               ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span>🎯</span>
-                  <span>Select Opponent First</span>
+                  <span className="text-sm">❌</span>
+                  <span>Connect Wallet First</span>
                 </span>
               )
-              : (
-                <span className="flex items-center justify-center gap-2">
-                  <span>⚔️</span>
-                  <span>Create Challenge & Bet {betAmount} USDC</span>
-                </span>
-              )
+              : !selectedUser 
+                ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="text-sm">🎯</span>
+                    <span>Select Opponent First</span>
+                  </span>
+                )
+                : (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="text-sm">⚔️</span>
+                    <span>Create Challenge & Bet {betAmount} USDC</span>
+                  </span>
+                )
         }
       </Button>
 
@@ -1657,19 +1734,45 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         <div className={`mt-4 p-6 rounded-2xl backdrop-blur-sm border-2 ${
           challengeResult.includes('successfully')
             ? 'bg-green-900/20 border-green-400/40 text-green-200'
-            : 'bg-red-900/20 border-red-400/40 text-red-200'
+            : challengeResult.includes('🔄')
+              ? 'bg-blue-900/20 border-blue-400/40 text-blue-200'
+              : 'bg-red-900/20 border-red-400/40 text-red-200'
         }`}>
           <div className="flex items-start gap-3">
             <span className="text-2xl mt-1">
-              {challengeResult.includes('successfully') ? '🎉' : '❌'}
+              {challengeResult.includes('successfully') 
+                ? '🎉' 
+                : challengeResult.includes('🔄')
+                  ? '⏳'
+                  : '❌'
+              }
             </span>
             <div className="flex-1">
               <div className="font-bold text-lg mb-2">
-                {challengeResult.includes('successfully') ? 'Challenge Created!' : 'Error'}
+                {challengeResult.includes('successfully') 
+                  ? 'Challenge Created!' 
+                  : challengeResult.includes('🔄')
+                    ? 'Processing...'
+                    : 'Error'
+                }
               </div>
               <div className="text-sm leading-relaxed whitespace-pre-line">
                 {challengeResult}
               </div>
+              {challengeResult.includes('cancelled') && (
+                <div className="mt-3 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
+                  <div className="text-yellow-300 text-xs">
+                    💡 <strong>Tip:</strong> Make sure to approve both the network switch and transaction in your wallet to create the challenge.
+                  </div>
+                </div>
+              )}
+              {challengeResult.includes('insufficient') && (
+                <div className="mt-3 p-3 bg-orange-900/30 border border-orange-500/30 rounded-lg">
+                  <div className="text-orange-300 text-xs">
+                    💡 <strong>Need USDC?</strong> You can get USDC on Arbitrum through a bridge or DEX like Uniswap.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1677,25 +1780,25 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
       {/* Play Now Section - appears after challenge creation */}
       {createdChallengeId && challengeUrls && (
-        <div className="mt-6 p-8 bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-pink-900/20 rounded-3xl border-2 border-blue-400/30 backdrop-blur-md shadow-2xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
-              <span className="text-3xl">🎮</span>
+        <div className="mt-6 p-6 bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-pink-900/20 rounded-2xl border-2 border-blue-400/30 backdrop-blur-md shadow-xl">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4 shadow-lg">
+              <span className="text-2xl">🎮</span>
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Ready for Battle!</h3>
-            <p className="text-gray-300 text-base leading-relaxed">
+            <h3 className="text-xl font-bold mb-2 text-white">Ready for Battle!</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">
               Time to set your challenge score.<br/>
               <span className="text-yellow-400 font-semibold">Your opponent will be notified only after you play!</span>
             </p>
           </div>
           
           {/* Step Indicator */}
-          <div className="mb-8 p-4 bg-yellow-900/30 border border-yellow-500/30 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
+          <div className="mb-6 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-xl">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚠️</span>
               <div>
-                <div className="font-bold text-yellow-300 text-lg">Important Next Steps:</div>
-                <div className="text-yellow-200 text-sm mt-1">
+                <div className="font-bold text-yellow-300 text-sm">Important Next Steps:</div>
+                <div className="text-yellow-200 text-xs mt-1">
                   1. Play the game and set your score<br/>
                   2. Opponent gets notified automatically<br/>
                   3. They have 24 hours to beat your score
@@ -1707,53 +1810,56 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           {/* Creator Play Button */}
           <Button
             onClick={() => window.location.href = challengeUrls.creatorPlay}
-            className="w-full mb-6 py-5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+            className="w-full mb-6 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold text-base rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
           >
-            <span className="flex items-center justify-center gap-3">
-              <span className="text-2xl">🚀</span>
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-lg">🚀</span>
               <span>Play Now & Set Your Score</span>
-              <span className="text-2xl">⚡</span>
+              <span className="text-lg">⚡</span>
             </span>
           </Button>
           
           {/* Manual Share Section */}
-          <div className="space-y-4 mb-6">
-            <div className="text-center">
-              <p className="text-gray-300 text-sm mb-4">
+          <div className="mb-6">
+            <div className="text-center mb-4">
+              <p className="text-gray-300 text-sm">
                 <span className="text-blue-400 font-semibold">Optional:</span> You can also manually share the challenge URL
               </p>
             </div>
-            <Button
-              onClick={() => {
-                navigator.clipboard.writeText(challengeUrls.opponentChallenge);
-                // You could add a toast notification here
-              }}
-              className="w-full py-4 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl border border-purple-400/30 transition-all duration-300 hover:scale-105"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span className="text-lg">📋</span>
-                <span>Copy Challenge URL</span>
-              </span>
-            </Button>
+            
+            {/* Side by side buttons */}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(challengeUrls.opponentChallenge);
+                  // You could add a toast notification here
+                }}
+                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <span className="text-sm">📋</span>
+                  <span>Copy Challenge URL</span>
+                </span>
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  setCreatedChallengeId(null);
+                  setChallengeUrls(null);
+                  setSelectedUser(null);
+                  setSearchTerm('');
+                  setBetAmount('1');
+                  setChallengeResult('');
+                }}
+                className="flex-1 py-2.5 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-sm font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <span className="text-sm">🔄</span>
+                  <span>Create Another</span>
+                </span>
+              </Button>
+            </div>
           </div>
-          
-          {/* Reset Button */}
-          <Button
-            onClick={() => {
-              setCreatedChallengeId(null);
-              setChallengeUrls(null);
-              setSelectedUser(null);
-              setSearchTerm('');
-              setBetAmount('1');
-              setChallengeResult('');
-            }}
-            className="w-full py-3 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl border border-gray-500/30 transition-all duration-300"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <span>🔄</span>
-              <span>Create Another Challenge</span>
-            </span>
-          </Button>
         </div>
       )}
     </div>
