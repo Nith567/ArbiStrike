@@ -14,8 +14,12 @@ export async function POST(
 ) {
   try {
     const challengeId = parseInt(params.id);
+    console.log(`=== SET WINNER API DEBUG ===`);
+    console.log(`Raw challenge ID: ${params.id}`);
+    console.log(`Parsed challenge ID: ${challengeId}`);
     
     if (isNaN(challengeId)) {
+      console.log(`ERROR: Invalid challenge ID - cannot parse "${params.id}" as integer`);
       return NextResponse.json(
         { error: 'Invalid challenge ID' },
         { status: 400 }
@@ -24,7 +28,10 @@ export async function POST(
 
     // Get the challenge from database
     const challenge = await getChallengeById(challengeId);
+    console.log(`Challenge from database:`, challenge);
+    
     if (!challenge) {
+      console.log(`ERROR: Challenge ${challengeId} not found in database`);
       return NextResponse.json(
         { error: 'Challenge not found' },
         { status: 404 }
@@ -33,6 +40,7 @@ export async function POST(
 
     // Check if challenge is completed and has a winner
     if (challenge.status !== 'completed') {
+      console.log(`ERROR: Challenge status is "${challenge.status}", expected "completed"`);
       return NextResponse.json(
         { error: `Challenge status is ${challenge.status}, expected 'completed'` },
         { status: 400 }
@@ -40,6 +48,7 @@ export async function POST(
     }
 
     if (!challenge.winner) {
+      console.log(`ERROR: Challenge has no winner address. Winner field:`, challenge.winner);
       return NextResponse.json(
         { error: 'Challenge has no winner address' },
         { status: 400 }

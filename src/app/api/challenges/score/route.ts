@@ -171,7 +171,11 @@ export async function POST(request: NextRequest) {
         const winnerScore = isCreatorWinner ? creatorScore.score : opponentScore.score;
         const loserScore = isCreatorWinner ? opponentScore.score : creatorScore.score;
         
-        // Automatically call smart contract to set winner
+        // First: Complete the challenge in database (sets status to 'completed' and winner)
+        await completeChallenge(challengeId, winner);
+        console.log(`Challenge ${challengeId} marked as completed with winner: ${winner}`);
+        
+        // Then: Call smart contract to set winner and get transaction hash
         let transactionHash = null;
         try {
           console.log(`Attempting to set winner on smart contract for challenge ${challengeId}`);
@@ -184,16 +188,20 @@ export async function POST(request: NextRequest) {
             const result = await setWinnerResponse.json();
             transactionHash = result.transactionHash;
             console.log(`Smart contract setWinner successful:`, result);
+            
+            // Update challenge with transaction hash
+            if (transactionHash) {
+              await completeChallenge(challengeId, winner, transactionHash);
+              console.log(`Challenge ${challengeId} updated with transaction hash: ${transactionHash}`);
+            }
           } else {
-            console.error(`Smart contract setWinner failed:`, await setWinnerResponse.text());
+            const errorText = await setWinnerResponse.text();
+            console.error(`Smart contract setWinner failed (${setWinnerResponse.status}):`, errorText);
           }
         } catch (smartContractError) {
           console.error('Error calling smart contract setWinner:', smartContractError);
           // Don't fail the score submission if smart contract call fails
         }
-
-        // Complete the challenge with winner and transaction hash
-        await completeChallenge(challengeId, winner, transactionHash);
 
         // Send winner notification
         try {
