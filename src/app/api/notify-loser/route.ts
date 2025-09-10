@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const notificationPayload = {
       target_fids: [loserFid],
       notification: {
-        title: "😔 ZTyping Challenge - You Lost",
+        title: "😔 ArbiStrike Challenge - You Lost",
         body: `You lost to ${winnerName} and he won ${usdcAmount}. ${loserScore !== undefined && winnerScore !== undefined ? `Your score: ${loserScore} vs ${winnerName}'s score: ${winnerScore}` : ''} Better luck next time! 💪`,
         target_url: `${process.env.NEXT_PUBLIC_URL}/challenge/${challengeId}`,
         uuid: notificationUUID

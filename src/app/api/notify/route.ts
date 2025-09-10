@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     const notificationPayload = {
       target_fids: [targetFid],
       notification: {
-        title: "🎮 ZTyping Challenge!",
-        body: `${challengerName} is challenging you to a typing battle for ${amountInUSDC} USDC! Can you beat their score?`,
+        title: "🎮 ArbiStrike Challenge!",
+        body: `${challengerName} is challenging you to a  battle for ${amountInUSDC}! Can you beat their score?`,
         target_url: `https://frames-v2-typing-game-4l9i.vercel.app/challenge/${challengeId}`,
         uuid: notificationUUID
       }

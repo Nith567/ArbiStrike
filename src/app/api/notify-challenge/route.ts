@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const notificationPayload = {
       target_fids: [targetFid],
       notification: {
-        title: "🎮 ZTyping Challenge!",
+        title: "🎮 ArbiStrike Challenge!",
         body: `${challengerName} is challenging you to a typing battle for ${usdcAmount}! Can you beat the score? 🚀⌨️`,
         target_url: challengeUrl,
         uuid: notificationUUID

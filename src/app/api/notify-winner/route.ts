@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       target_fids: [winnerFid],
       notification: {
         title: "🏆 ArbiStrike Winner!",
-        body: `You defeated ${loserName} and won ${usdcAmount} USDC! ${finalScore ? `Score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} 🎉`,
+        body: `You defeated ${loserName} and won ${usdcAmount}! ${finalScore ? `Score: ${finalScore}${opponentScore ? ` vs ${opponentScore}` : ''}` : ''} 🎉`,
         target_url: targetUrl,
         uuid: notificationUUID
       }
