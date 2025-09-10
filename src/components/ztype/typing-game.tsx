@@ -818,7 +818,7 @@ export function TypingGame() {
                 pause. Click the play area to focus.
                 {challengeId && (
                   <span className="block mt-2 text-cyan-400">
-                    🎯 Playing for challenge #{challengeId} as {playerRole === 'creator' ? '👑 Creator' : '⚔️ Challenger'}. Your score will be automatically submitted!
+                    🎯 Playing for challenge as {playerRole === 'creator' ? '👑 Creator' : '⚔️ Challenger'}. Your score will be automatically submitted!
                   </span>
                 )}
               </p>
@@ -860,7 +860,7 @@ export function TypingGame() {
               {challengeId && (
                 <div className="w-full max-w-sm p-3 rounded border border-cyan-400/30 bg-cyan-400/10">
                   <div className="text-sm">
-                    <div className="text-cyan-400 font-medium">Challenge #{challengeId}</div>
+                    <div className="text-cyan-400 font-medium">Challenge</div>
                     {scoreSubmitted ? (
                       <>
                         <div className="text-green-400 mt-1">✅ Score Submitted Successfully!</div>

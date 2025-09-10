@@ -254,7 +254,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">⚔️ Typing Challenge</h1>
-          <p className="text-gray-300">Challenge #{challenge.id}</p>
+          <p className="text-gray-300">Challenge</p>
         </div>
 
         {/* Debug Info (remove in production) */}
