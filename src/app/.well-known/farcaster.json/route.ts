@@ -9,14 +9,17 @@ export async function GET() {
   },
     frame: {
       version: "1",
-      name: "Frames v2 Demo",
+      name: "ArbStrike",
       iconUrl: `${appUrl}/icon.png`,
       homeUrl: appUrl,
-      imageUrl: `${appUrl}/frames/hello/opengraph-image`,
-      buttonTitle: "Launch Frame",
-      splashImageUrl: `${appUrl}/splash.png`,
-      splashBackgroundColor: "#f7f7f7",
-webhookUrl: "https://api.neynar.com/f/app/4d455c47-492f-4014-8b69-0613c80b23f2/event"
+      imageUrl: `${appUrl}/type.png`,
+      buttonTitle: "Play Now",
+      splashImageUrl: `${appUrl}/icon.png`,
+      splashBackgroundColor: "#f6f287",
+webhookUrl: "https://api.neynar.com/f/app/4d455c47-492f-4014-8b69-0613c80b23f2/event",
+  baseBuilder: {
+    allowedAddresses: ["0x01445933F29005610960BE63511eba243F317d2F"]
+  }
     },
   };
 
