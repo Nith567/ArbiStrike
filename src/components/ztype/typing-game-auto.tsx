@@ -599,15 +599,27 @@ function TypingGameAuto() {
               
               {/* Challenge Status */}
               {challengeId && (
-                <div className="mt-4 p-3 rounded border border-cyan-400/30 bg-cyan-400/10">
-                  <div className="text-center text-sm">
-                    <div className="text-cyan-400 font-medium">Challenge #{challengeId}</div>
+                <div className="mt-4 p-4 rounded-xl border-2 border-cyan-400/40 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 backdrop-blur-sm">
+                  <div className="text-center">
                     {scoreSubmitted ? (
-                      <div className="text-green-400 mt-1">✅ Score Submitted Successfully!</div>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">✓</span>
+                        </div>
+                        <div className="text-green-400 font-semibold">Score Submitted Successfully!</div>
+                      </div>
                     ) : submitError ? (
-                      <div className="text-red-400 mt-1">❌ {submitError}</div>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">✕</span>
+                        </div>
+                        <div className="text-red-400 font-semibold">{submitError}</div>
+                      </div>
                     ) : (
-                      <div className="text-yellow-400 mt-1">📤 Submitting score...</div>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-cyan-400 border-t-transparent"></div>
+                        <div className="text-cyan-400 font-semibold">Submitting score...</div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -646,7 +658,8 @@ function TypingGameAuto() {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium border border-white/20 text-white hover:bg-white/10"
+                  disabled={challengeId ? (!scoreSubmitted && !submitError) : false}
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium border border-white/20 text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200"
                 >
                   Home
                 </button>
@@ -654,15 +667,16 @@ function TypingGameAuto() {
                 {!challengeId && (
                   <button
                     onClick={handleShare}
-                    className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-cyan-600 hover:bg-cyan-700 text-white"
+                    className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg transition-all duration-200 hover:scale-105"
                   >
+                    <span className="mr-1">🚀</span>
                     Share Score
                   </button>
                 )}
                 <button
                   onClick={startGame}
-                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
-                  style={{ background: COLORS.accent, color: "#111" }}
+                  disabled={challengeId ? (!scoreSubmitted && !submitError) : false}
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-amber-500 disabled:hover:to-orange-500 transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
                 >
                   Play again
                 </button>

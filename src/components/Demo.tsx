@@ -1374,7 +1374,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
 
-      setChallengeResult('🔄 Creating challenge in database...');
+      setChallengeResult('🔄 Creating challenge in ...');
 
       // First create challenge in our database
       console.log('=== DEBUG: Creating challenge ===');
@@ -1810,12 +1810,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
           {/* Creator Play Button */}
           <Button
             onClick={() => window.location.href = challengeUrls.creatorPlay}
-            className="w-full mb-6 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold text-base rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+            className="w-full mb-6 py-2.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold text-sm rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
           >
             <span className="flex items-center justify-center gap-2">
-              <span className="text-lg">🚀</span>
-              <span>Play Now & Set Your Score</span>
-              <span className="text-lg">⚡</span>
+              <span className="text-base">🎮</span>
+              <span>Set Score</span>
             </span>
           </Button>
           
@@ -1828,17 +1827,17 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
             </div>
             
             {/* Side by side buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button
                 onClick={() => {
                   navigator.clipboard.writeText(challengeUrls.opponentChallenge);
                   // You could add a toast notification here
                 }}
-                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-3 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <span className="text-sm">📋</span>
-                  <span>Copy Challenge URL</span>
+                <span className="flex items-center justify-center gap-1">
+                  <span className="text-xs">📋</span>
+                  <span>Copy URL</span>
                 </span>
               </Button>
               
@@ -1851,11 +1850,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   setBetAmount('1');
                   setChallengeResult('');
                 }}
-                className="flex-1 py-2.5 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-sm font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-3 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-xs font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <span className="text-sm">🔄</span>
-                  <span>Create Another</span>
+                <span className="flex items-center justify-center gap-1">
+                  <span className="text-xs">🔄</span>
+                  <span>New Challenge</span>
                 </span>
               </Button>
             </div>

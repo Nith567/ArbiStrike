@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
+import { useAccount, useWalletClient, useSwitchChain, useConnect } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
 import { encodeFunctionData, parseAbi, formatUnits } from 'viem';
 import sdk, { type Context } from "@farcaster/miniapp-sdk";
 import { Button } from '~/components/ui/Button';
 import { truncateAddress } from '~/lib/truncateAddress';
+import { config } from "~/components/providers/WagmiProvider";
 
 interface Challenge {
   id: number;
@@ -40,8 +41,9 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { data: walletClient, isLoading: isWalletClientLoading, error: walletClientError } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading } = useWalletClient();
   const { switchChain } = useSwitchChain();
+  const { connect } = useConnect();
 
   // Load Farcaster context
   useEffect(() => {
@@ -67,6 +69,24 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       };
     }
   }, [isSDKLoaded]);
+
+  // Auto-connect wallet if not connected and SDK is loaded
+  useEffect(() => {
+    const autoConnect = async () => {
+      if (isSDKLoaded && !isConnected && config.connectors.length > 0) {
+        try {
+          await connect({ 
+            chainId: arbitrum.id,
+            connector: config.connectors[0] 
+          });
+        } catch (error) {
+          console.log("Auto-connect failed:", error);
+        }
+      }
+    };
+    
+    autoConnect();
+  }, [isSDKLoaded, isConnected, connect]);
 
   // Load challenge data (refresh from server)
   useEffect(() => {
@@ -96,30 +116,13 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
   }, [challenge?.id, isSDKLoaded]);
 
   const handleAcceptChallenge = useCallback(async () => {
-    console.log('=== DEBUG: Accept Challenge Debug ===');
-    console.log('walletClient:', !!walletClient);
-    console.log('address:', address);
-    console.log('challenge:', !!challenge);
-    console.log('context:', !!context);
-    console.log('isConnected:', isConnected);
-    
     if (!isConnected || !address) {
       setAcceptResult('Please connect your wallet first to accept this challenge.');
       return;
     }
     
-    if (isWalletClientLoading) {
-      setAcceptResult('Wallet is connecting... Please wait a moment and try again.');
-      return;
-    }
-    
-    if (walletClientError) {
-      setAcceptResult(`Wallet connection error: ${walletClientError.message}. Please refresh and try again.`);
-      return;
-    }
-    
     if (!walletClient) {
-      setAcceptResult('Wallet client not ready. Please wait a moment and try again.');
+      setAcceptResult('Wallet client not available. Please refresh and try again.');
       return;
     }
     
@@ -208,7 +211,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
     } finally {
       setIsAccepting(false);
     }
-  }, [walletClient, address, challenge, context, switchChain]);
+  }, [walletClient, address, challenge, context, switchChain, isConnected]);
 
   if (!isSDKLoaded || loading) {
     return (
@@ -261,7 +264,6 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
             <div>address: {address || 'null'}</div>
             <div>walletClient: {walletClient ? 'available' : 'null'}</div>
             <div>isWalletClientLoading: {String(isWalletClientLoading)}</div>
-            <div>walletClientError: {walletClientError ? walletClientError.message : 'null'}</div>
             <div>context: {context ? 'available' : 'null'}</div>
             <div>challenge: {challenge ? 'available' : 'null'}</div>
             <div>isSDKLoaded: {String(isSDKLoaded)}</div>
@@ -270,7 +272,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
 
         {/* Challenge Details */}
         <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-6 mb-6 border border-gray-600">
-          <h2 className="text-xl font-semibold mb-4 text-white">Challenge Details</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">Your Opponent</h2>
           
           <div className="space-y-4 text-sm">
             <div>
@@ -336,7 +338,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                   {challenge.creatorName || 'The challenger'} has set their score. You can now accept this challenge and show your typing skills!
                 </div>
               </div>
-              {!isConnected || !walletClient || isWalletClientLoading ? (
+              {!isConnected || !walletClient ? (
                 <div className="text-center">
                   <p className="text-gray-300 mb-4">
                     {!isConnected ? '🔗 Connect your wallet to accept this challenge' : 
@@ -344,22 +346,12 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                      '⏳ Preparing wallet...'}
                   </p>
                   <Button 
-                    onClick={() => {
-                      // Trigger wallet connection
-                      if (typeof window !== 'undefined' && (window as any).ethereum) {
-                        (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-                      }
-                    }}
+                    onClick={() => connect({ chainId: arbitrum.id, connector: config.connectors[0] })}
                     disabled={isConnected && (isWalletClientLoading || !walletClient)}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     {!isConnected ? '🔗 Connect Wallet' : '⏳ Preparing Wallet...'}
                   </Button>
-                  {walletClientError && (
-                    <p className="text-red-400 text-sm mt-2">
-                      Wallet error: {walletClientError.message}
-                    </p>
-                  )}
                 </div>
               ) : !context ? (
                 <div className="text-center">
