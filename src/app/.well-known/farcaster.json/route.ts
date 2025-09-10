@@ -9,7 +9,7 @@ export async function GET() {
   },
     frame: {
       version: "1",
-      name: "ArbStrike",
+      name: "ArbiStrike",
       iconUrl: `${appUrl}/icon.png`,
       homeUrl: appUrl,
       imageUrl: `${appUrl}/type.png`,
