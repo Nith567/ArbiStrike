@@ -391,7 +391,7 @@ export default function Demo(
             </div>
             <h2 className="text-xl font-bold mb-2 text-white">Solo Arena</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Train your skills in the cosmic battlefield (Demo game)
+              Train your skills in the cosmic battlefield (DEMO game)
             </p>
           </div>
           
@@ -1833,11 +1833,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   navigator.clipboard.writeText(challengeUrls.opponentChallenge);
                   // You could add a toast notification here
                 }}
-                className="flex-shrink-0 w-20 py-2 px-1 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-3 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-1">
                   <span className="text-xs">📋</span>
-                  <span>Copy</span>
+                  <span>Copy URL</span>
                 </span>
               </Button>
               
@@ -1850,11 +1850,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   setBetAmount('1');
                   setChallengeResult('');
                 }}
-                className="flex-1 py-2 px-2 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-xs font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-3 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-xs font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-1">
                   <span className="text-xs">🔄</span>
-                  <span>New</span>
+                  <span>New Challenge</span>
                 </span>
               </Button>
             </div>
