@@ -1450,47 +1450,14 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         const creatorPlayUrl = `${window.location.origin}/ztype?challengeId=${challengeId}&role=creator`;
         const opponentChallengeUrl = `${window.location.origin}/challenge/${challengeId}`;
         
-        // Send notification to the opponent
-        try {
-          const notifyResponse = await fetch('/api/notify-challenge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              targetFid: selectedUser.fid,
-              challengerName: context.user.displayName || context.user.username || 'Unknown',
-              usdcAmount: `${betAmount} USDC`,
-              challengeId: challengeId,
-              challengeUrl: opponentChallengeUrl
-            }),
-          });
-
-          if (notifyResponse.ok) {
-            setChallengeResult(`🎉 Challenge created successfully!
+        // DON'T send notification yet - only after creator plays and sets score
+        setChallengeResult(`🎉 Challenge created successfully!
 
 💰 USDC bet placed: ${betAmount} USDC
 👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
-🔔 Notification sent to opponent!
 
-🎮 NEXT STEP: You need to play first to set your score!`);
-          } else {
-            setChallengeResult(`🎉 Challenge created successfully! 
-
-💰 USDC bet placed: ${betAmount} USDC
-👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
-⚠️ Challenge created but notification failed to send
-
-🎮 NEXT STEP: You need to play first to set your score!`);
-          }
-        } catch (notifyError) {
-          console.error('Failed to send notification:', notifyError);
-          setChallengeResult(`🎉 Challenge created successfully! 
-          
-💰 USDC bet placed: ${betAmount} USDC
-👤 Challenging: ${selectedUser.display_name} (@${selectedUser.username})
-⚠️ Challenge created but notification failed to send
-
-🎮 NEXT STEP: You need to play first to set your score!`);
-        }
+⚠️ IMPORTANT: You must play first to set your challenge score!
+� Opponent will be notified ONLY after you complete your game.`);
         
         setCreatedChallengeId(challengeId);
         
@@ -1542,70 +1509,107 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       )}
 
       {/* Bet Amount Input */}
-      <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Bet Amount (USDC)
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-white">
+          💰 Bet Amount (USDC)
         </label>
-        <input
-          type="text"
-          value={betAmount}
-          onChange={(e) => setBetAmount(e.target.value)}
-          placeholder="1.5"
-          className="w-full p-2 text-xs bg-white dark:bg-gray-700 border rounded"
-        />
-        <div className="text-xs text-gray-500 mt-1">
-          Current: {betAmount} USDC
+        <div className="relative">
+          <input
+            type="text"
+            value={betAmount}
+            onChange={(e) => setBetAmount(e.target.value)}
+            placeholder="1.5"
+            className="w-full p-3 text-sm bg-gray-800/50 border border-gray-600/50 rounded-xl backdrop-blur-sm text-white placeholder-gray-400 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+            USDC
+          </div>
+        </div>
+        <div className="text-xs text-gray-400 flex items-center gap-2">
+          <span>💎</span>
+          <span>Betting: {betAmount} USDC on Arbitrum</span>
         </div>
       </div>
 
       {/* User Search */}
-      <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Search Farcaster User to Challenge
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-white">
+          🎯 Find Your Opponent
         </label>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search for Farcaster users..."
-          className="w-full p-2 text-xs bg-white dark:bg-gray-700 border rounded"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Farcaster username..."
+            className="w-full p-3 text-sm bg-gray-800/50 border border-gray-600/50 rounded-xl backdrop-blur-sm text-white placeholder-gray-400 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            🔍
+          </div>
+        </div>
       </div>
 
       {/* Loading */}
       {loading && (
-        <div className="text-xs text-gray-500">Searching users...</div>
+        <div className="flex items-center gap-2 text-sm text-purple-400">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-400 border-t-transparent"></div>
+          <span>Searching for opponents...</span>
+        </div>
       )}
 
       {/* Search Results */}
       {users.length > 0 && (
-        <div className="space-y-2 max-h-40 overflow-y-auto">
-          {users.map((user) => (
-            <div
-              key={user.fid}
-              onClick={() => setSelectedUser(user)}
-              className={`p-2 border rounded cursor-pointer text-xs ${
-                selectedUser?.fid === user.fid
-                  ? 'bg-blue-100 border-blue-300 dark:bg-blue-900'
-                  : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <img
-                  src={user.pfp_url}
-                  alt={user.display_name}
-                  className="w-6 h-6 rounded-full"
-                />
-                <div>
-                  <div className="font-medium">{user.display_name}</div>
-                  <div className="text-gray-500">@{user.username} • FID: {user.fid}</div>
-                  <div className="text-gray-400">
-                    ETH: {user.verified_addresses?.primary?.eth_address ? truncateAddress(user.verified_addresses.primary.eth_address) : 'Not available'}
+        <div className="space-y-2">
+          <div className="text-sm font-semibold text-white mb-3">
+            🎮 Available Opponents
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {users.map((user) => (
+              <div
+                key={user.fid}
+                onClick={() => setSelectedUser(user)}
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
+                  selectedUser?.fid === user.fid
+                    ? 'bg-purple-600/30 border-purple-400/60 shadow-lg shadow-purple-500/20'
+                    : 'bg-gray-800/30 border-gray-600/30 hover:bg-gray-700/40 hover:border-gray-500/50 hover:shadow-md'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <img
+                      src={user.pfp_url}
+                      alt={user.display_name}
+                      className="w-10 h-10 rounded-full border-2 border-gray-500/30"
+                    />
+                    {selectedUser?.fid === user.fid && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs">✓</span>
+                      </div>
+                    )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-white truncate">{user.display_name}</div>
+                    <div className="text-sm text-gray-400">@{user.username} • FID: {user.fid}</div>
+                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                      <span>🔗</span>
+                      <span>
+                        {user.verified_addresses?.primary?.eth_address 
+                          ? truncateAddress(user.verified_addresses.primary.eth_address)
+                          : 'No verified address'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  {selectedUser?.fid === user.fid && (
+                    <div className="text-purple-400 text-lg">
+                      🎯
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
@@ -1616,82 +1620,126 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         onClick={handleCreateChallenge}
         disabled={!selectedUser || !address || !isConnected || isCreatingChallenge}
         isLoading={isCreatingChallenge}
-        className="w-full text-xs bg-green-600 hover:bg-green-700"
+        className="w-full py-4 text-sm font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
       >
         {isCreatingChallenge 
-          ? 'Creating Challenge...' 
+          ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Creating Challenge...</span>
+            </span>
+          )
           : !isConnected 
-            ? '❌ Connect Wallet First'
+            ? (
+              <span className="flex items-center justify-center gap-2">
+                <span>❌</span>
+                <span>Connect Wallet First</span>
+              </span>
+            )
             : !selectedUser 
-              ? '❌ Select User First'
-              : '✅ Create Challenge & Bet USDC'
+              ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span>🎯</span>
+                  <span>Select Opponent First</span>
+                </span>
+              )
+              : (
+                <span className="flex items-center justify-center gap-2">
+                  <span>⚔️</span>
+                  <span>Create Challenge & Bet {betAmount} USDC</span>
+                </span>
+              )
         }
       </Button>
 
       {/* Result */}
       {challengeResult && (
-        <div className={`mt-3 p-4 rounded-xl backdrop-blur-sm border text-sm ${
+        <div className={`mt-4 p-6 rounded-2xl backdrop-blur-sm border-2 ${
           challengeResult.includes('successfully')
-            ? 'bg-green-900/30 border-green-500/30 text-green-300'
-            : 'bg-red-900/30 border-red-500/30 text-red-300'
+            ? 'bg-green-900/20 border-green-400/40 text-green-200'
+            : 'bg-red-900/20 border-red-400/40 text-red-200'
         }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl mt-1">
               {challengeResult.includes('successfully') ? '🎉' : '❌'}
             </span>
-            <span className="font-medium">{challengeResult}</span>
+            <div className="flex-1">
+              <div className="font-bold text-lg mb-2">
+                {challengeResult.includes('successfully') ? 'Challenge Created!' : 'Error'}
+              </div>
+              <div className="text-sm leading-relaxed whitespace-pre-line">
+                {challengeResult}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Play Now Button - appears after challenge creation */}
+      {/* Play Now Section - appears after challenge creation */}
       {createdChallengeId && challengeUrls && (
-        <div className="mt-4 p-6 bg-gradient-to-br from-blue-900/40 to-purple-900/20 rounded-2xl border border-blue-500/20 backdrop-blur-sm">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4">
-              <span className="text-2xl">🎮</span>
+        <div className="mt-6 p-8 bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-pink-900/20 rounded-3xl border-2 border-blue-400/30 backdrop-blur-md shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+              <span className="text-3xl">🎮</span>
             </div>
-            <h3 className="text-lg font-bold mb-2 text-white">Battle Ready!</h3>
-            <p className="text-gray-400 text-sm">
-              Time to set your challenge score and dominate the arena
+            <h3 className="text-2xl font-bold mb-3 text-white">Ready for Battle!</h3>
+            <p className="text-gray-300 text-base leading-relaxed">
+              Time to set your challenge score.<br/>
+              <span className="text-yellow-400 font-semibold">Your opponent will be notified only after you play!</span>
             </p>
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="mb-8 p-4 bg-yellow-900/30 border border-yellow-500/30 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <div className="font-bold text-yellow-300 text-lg">Important Next Steps:</div>
+                <div className="text-yellow-200 text-sm mt-1">
+                  1. Play the game and set your score<br/>
+                  2. Opponent gets notified automatically<br/>
+                  3. They have 24 hours to beat your score
+                </div>
+              </div>
+            </div>
           </div>
           
           {/* Creator Play Button */}
           <Button
             onClick={() => window.location.href = challengeUrls.creatorPlay}
-            className="w-full mb-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+            className="w-full mb-6 py-5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
           >
-            <span className="flex items-center justify-center gap-2">
-              <span className="text-xl">🚀</span>
+            <span className="flex items-center justify-center gap-3">
+              <span className="text-2xl">🚀</span>
               <span>Play Now & Set Your Score</span>
+              <span className="text-2xl">⚡</span>
             </span>
           </Button>
           
-          {/* Share opponent challenge */}
-          <div className="space-y-3 mb-4">
+          {/* Manual Share Section */}
+          <div className="space-y-4 mb-6">
             <div className="text-center">
-              <p className="text-gray-400 text-sm mb-3">
-                Share this challenge with your opponent:
+              <p className="text-gray-300 text-sm mb-4">
+                <span className="text-blue-400 font-semibold">Optional:</span> You can also manually share the challenge URL
               </p>
             </div>
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(challengeUrls.opponentChallenge);
-                // Optional: Show a toast or temporary feedback
+                // You could add a toast notification here
               }}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-105"
+              className="w-full py-4 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl border border-purple-400/30 transition-all duration-300 hover:scale-105"
             >
               <span className="flex items-center justify-center gap-2">
                 <span className="text-lg">📋</span>
-                <span>Copy Opponent Challenge URL</span>
+                <span>Copy Challenge URL</span>
               </span>
             </Button>
           </div>
           
+          {/* Reset Button */}
           <Button
             onClick={() => {
-              // Reset form after user has played and can share
               setCreatedChallengeId(null);
               setChallengeUrls(null);
               setSelectedUser(null);
@@ -1699,11 +1747,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
               setBetAmount('1');
               setChallengeResult('');
             }}
-            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white py-3 rounded-xl transition-all duration-300"
+            className="w-full py-3 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl border border-gray-500/30 transition-all duration-300"
           >
             <span className="flex items-center justify-center gap-2">
               <span>🔄</span>
-              <span>Create New Challenge</span>
+              <span>Create Another Challenge</span>
             </span>
           </Button>
         </div>
