@@ -105,17 +105,20 @@ export async function completeChallenge(id: number, winner: string, transactionH
     return null;
   }
   
-  // Allow completion if status is 'accepted' or 'waiting_opponent' (in case both players played)
-  if (challenge.status !== 'accepted' && challenge.status !== 'waiting_opponent') {
-    console.log(`Cannot complete challenge ${id}: status is ${challenge.status}, expected 'accepted' or 'waiting_opponent'`);
+  // Allow completion if status is 'accepted', 'waiting_opponent', or 'completed' (for transaction hash updates)
+  if (challenge.status !== 'accepted' && challenge.status !== 'waiting_opponent' && challenge.status !== 'completed') {
+    console.log(`Cannot complete challenge ${id}: status is ${challenge.status}, expected 'accepted', 'waiting_opponent', or 'completed'`);
     return null;
   }
   
   challenge.winner = winner;
   challenge.status = 'completed';
-  challenge.completedAt = new Date();
+  if (!challenge.completedAt) {
+    challenge.completedAt = new Date();
+  }
   if (transactionHash) {
     challenge.transactionHash = transactionHash;
+    console.log(`Setting transaction hash for challenge ${id}: ${transactionHash}`);
   }
   
   // Update the challenge in Redis

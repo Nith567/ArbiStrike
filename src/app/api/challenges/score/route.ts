@@ -171,11 +171,7 @@ export async function POST(request: NextRequest) {
         const winnerScore = isCreatorWinner ? creatorScore.score : opponentScore.score;
         const loserScore = isCreatorWinner ? opponentScore.score : creatorScore.score;
         
-        // First: Complete the challenge in database (sets status to 'completed' and winner)
-        await completeChallenge(challengeId, winner);
-        console.log(`Challenge ${challengeId} marked as completed with winner: ${winner}`);
-        
-        // Then: Call smart contract to set winner and get transaction hash
+        // First: Call smart contract to set winner and get transaction hash
         let transactionHash = null;
         try {
           console.log(`Attempting to set winner on smart contract for challenge ${challengeId}`);
@@ -195,15 +191,6 @@ export async function POST(request: NextRequest) {
             
             transactionHash = result.transactionHash;
             console.log(`Extracted transactionHash:`, transactionHash);
-            
-            // Update challenge with transaction hash
-            if (transactionHash) {
-              console.log(`Calling completeChallenge with hash: ${transactionHash}`);
-              const updatedChallenge = await completeChallenge(challengeId, winner, transactionHash);
-              console.log(`Challenge ${challengeId} updated with transaction hash:`, updatedChallenge);
-            } else {
-              console.warn(`No transaction hash received from set-winner API!`);
-            }
           } else {
             const errorText = await setWinnerResponse.text();
             console.error(`Smart contract setWinner failed (${setWinnerResponse.status}):`, errorText);
@@ -212,6 +199,10 @@ export async function POST(request: NextRequest) {
           console.error('Error calling smart contract setWinner:', smartContractError);
           // Don't fail the score submission if smart contract call fails
         }
+
+        // Then: Complete the challenge in database with transaction hash
+        await completeChallenge(challengeId, winner, transactionHash);
+        console.log(`Challenge ${challengeId} marked as completed with winner: ${winner} and transaction hash: ${transactionHash}`);
 
         // Send winner notification
         try {

@@ -403,14 +403,17 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                 </p>
                 {challenge.transactionHash && (
                   <div className="mt-4">
-                    <p className="text-gray-400 text-sm mb-2">Prize Payment:</p>
+                    <p className="text-gray-400 text-sm mb-2">Amount Won:</p>
+                    <div className="mb-3 text-lg font-semibold text-green-400">
+                      {(parseInt(challenge.betAmount) / 1000000).toFixed(6)} USDC
+                    </div>
                     <a
-                      href={`https://arbiscan.io/tx/${challenge.transactionHash}`}
+                      href={`http://arbitrum.blockscout.com/tx/${challenge.transactionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-sm"
                     >
-                      <span>�</span>
+                      <span>💰</span>
                       <span>View Payment Transaction</span>
                       <span className="text-xs opacity-75">↗</span>
                     </a>
