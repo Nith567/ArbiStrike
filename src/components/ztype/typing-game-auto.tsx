@@ -306,7 +306,8 @@ function TypingGameAuto() {
       let ended = false
       enemiesRef.current = enemiesRef.current.map((e) => ({ ...e, y: e.y + e.speed * dt }))
       for (const e of enemiesRef.current) {
-        if (e.y + e.size >= h - 72) {
+        // Check if enemy actually hits the ground (bottom of screen minus small ship area)
+        if (e.y + e.size >= h - 20) {
           ended = true
           break
         }
@@ -670,7 +671,7 @@ function TypingGameAuto() {
                     className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg transition-all duration-200 hover:scale-105"
                   >
                     <span className="mr-1">🚀</span>
-                    Share Score
+                    Share
                   </button>
                 )}
                 <button
