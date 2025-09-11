@@ -147,19 +147,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
 
-      // First update challenge in our database
-      const dbResponse = await fetch(`/api/challenges/${challenge.id}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: address,
-          fid: context.user.fid,
-        }),
-      });
-
-      if (!dbResponse.ok) {
-        throw new Error('Failed to accept challenge, pls refresh and try again');
-      }
+      setAcceptResult('🔄 Preparing blockchain transactions...');
 
       // Prepare USDC approve transaction
       const approveData = encodeFunctionData({
@@ -175,7 +163,9 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         args: [BigInt(challenge.id)],
       });
 
-      // Send batch transaction
+      setAcceptResult('🔄 Sending blockchain transaction... Please confirm in your wallet');
+
+      // Send batch transaction FIRST
       const { id } = await walletClient.sendCalls({
         account: address as `0x${string}`,
         chain: arbitrum,
@@ -193,6 +183,8 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         ],
       });
 
+      setAcceptResult('🔄 Waiting for transaction confirmation...');
+
       // Wait for transaction completion
       const result = await walletClient.waitForCallsStatus({
         id,
@@ -200,11 +192,27 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       });
 
       if (result.status === 'success') {
-        setAcceptResult(`Challenge accepted successfully! You can now play the game.`);
+        setAcceptResult('🔄 Transaction confirmed! Updating challenge status...');
+        
+        // ONLY update database AFTER blockchain transaction succeeds
+        const dbResponse = await fetch(`/api/challenges/${challenge.id}/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            address: address,
+            fid: context.user.fid,
+          }),
+        });
+
+        if (!dbResponse.ok) {
+          throw new Error('Blockchain transaction succeeded but failed to update challenge status. Please contact support.');
+        }
+
+        setAcceptResult(`✅ Challenge accepted successfully! You can now play the game.`);
         // Update local state
         setChallenge(prev => prev ? { ...prev, status: 'accepted', opponent: address, opponentFid: context.user.fid } : null);
       } else {
-        setAcceptResult('Transaction failed or pending');
+        throw new Error('Blockchain transaction failed or was cancelled');
       }
 
     } catch (error) {

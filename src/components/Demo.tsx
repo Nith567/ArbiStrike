@@ -1359,7 +1359,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
 
       setChallengeResult('🔄 Switching to Arbitrum network...');
       
-      // Switch to Arbitrum (chain ID 42161) with proper error handling
+/*       // Switch to Arbitrum (chain ID 42161) with proper error handling
       try {
         await switchChain({ chainId: arbitrum.id });
         // Give the network switch a moment to complete
@@ -1370,7 +1370,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         }
         throw new Error(`Failed to switch to Arbitrum network: ${switchError?.message || 'Unknown error'}`);
       }
-
+ */
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
 
