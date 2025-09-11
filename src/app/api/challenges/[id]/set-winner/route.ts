@@ -39,10 +39,11 @@ export async function POST(
     }
 
     // Check if challenge is completed and has a winner
-    if (challenge.status !== 'completed') {
-      console.log(`ERROR: Challenge status is "${challenge.status}", expected "completed"`);
+    // Allow both 'completed' status OR if challenge has a winner (in case it was marked completed but smart contract failed)
+    if (challenge.status !== 'completed' && !challenge.winner) {
+      console.log(`ERROR: Challenge status is "${challenge.status}" and winner is "${challenge.winner}". Need either completed status or winner address.`);
       return NextResponse.json(
-        { error: `Challenge status is ${challenge.status}, expected 'completed'` },
+        { error: `Challenge status is ${challenge.status} and no winner. Expected 'completed' status or winner address.` },
         { status: 400 }
       );
     }
