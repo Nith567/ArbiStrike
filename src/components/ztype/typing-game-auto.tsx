@@ -307,7 +307,7 @@ function TypingGameAuto() {
       enemiesRef.current = enemiesRef.current.map((e) => ({ ...e, y: e.y + e.speed * dt }))
       for (const e of enemiesRef.current) {
         // Only end game when enemies actually reach the ship area (much closer to bottom)
-        if (e.y >= h - 50) {
+        if (e.y >= h - 5) {
           ended = true
           break
         }

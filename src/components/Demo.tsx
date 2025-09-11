@@ -1833,11 +1833,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   navigator.clipboard.writeText(challengeUrls.opponentChallenge);
                   // You could add a toast notification here
                 }}
-                className="flex-1 py-2 px-3 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-2 bg-gradient-to-r from-purple-600/60 to-pink-600/60 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-medium rounded-lg border border-purple-400/30 transition-all duration-300 hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-1">
                   <span className="text-xs">📋</span>
-                  <span>Copy URL</span>
+                  <span>Copy</span>
                 </span>
               </Button>
               
@@ -1850,11 +1850,11 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
                   setBetAmount('1');
                   setChallengeResult('');
                 }}
-                className="flex-1 py-2 px-3 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-xs font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
+                className="flex-1 py-2 px-2 bg-gradient-to-r from-gray-600/60 to-gray-700/60 hover:from-gray-600 hover:to-gray-700 text-white text-xs font-medium rounded-lg border border-gray-500/30 transition-all duration-300 hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-1">
                   <span className="text-xs">🔄</span>
-                  <span>New Challenge</span>
+                  <span>New</span>
                 </span>
               </Button>
             </div>
