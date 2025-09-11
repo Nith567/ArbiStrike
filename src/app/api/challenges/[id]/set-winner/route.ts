@@ -81,19 +81,28 @@ export async function POST(
     });
 
     // Send the transaction
+    console.log(`Sending setWinner transaction to contract: ${TYPING_CHALLENGE_CONTRACT}`);
+    console.log(`Transaction data:`, setWinnerData);
+    
     const txHash = await walletClient.sendTransaction({
       to: TYPING_CHALLENGE_CONTRACT,
       data: setWinnerData,
       value: 0n,
     });
 
-    console.log(`setWinner transaction sent: ${txHash}`);
+    console.log(`=== TRANSACTION HASH DEBUG ===`);
+    console.log(`txHash type:`, typeof txHash);
+    console.log(`txHash value:`, txHash);
+    console.log(`txHash stringified:`, JSON.stringify(txHash));
+    console.log(`Is txHash a string?:`, typeof txHash === 'string');
+    console.log(`txHash length:`, txHash?.length);
 
     return NextResponse.json({
       success: true,
       challengeId,
       winnerAddress: challenge.winner,
       transactionHash: txHash,
+      transactionHashType: typeof txHash,
       message: 'Winner set successfully on smart contract',
     });
 
@@ -102,6 +111,95 @@ export async function POST(
     return NextResponse.json(
       { 
         error: 'Failed to set winner on smart contract',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// GET request for testing/debugging from browser
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const challengeId = parseInt(params.id);
+    console.log(`=== SET WINNER GET REQUEST DEBUG ===`);
+    console.log(`Testing set-winner for challenge ID: ${challengeId}`);
+    
+    if (isNaN(challengeId)) {
+      return NextResponse.json(
+        { error: 'Invalid challenge ID' },
+        { status: 400 }
+      );
+    }
+
+    // Get the challenge from database
+    const challenge = await getChallengeById(challengeId);
+    
+    if (!challenge) {
+      return NextResponse.json(
+        { error: 'Challenge not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if challenge is completed and has a winner
+    if (challenge.status !== 'completed') {
+      return NextResponse.json({
+        error: `Challenge status is ${challenge.status}, expected 'completed'`,
+        challenge: {
+          id: challenge.id,
+          status: challenge.status,
+          winner: challenge.winner,
+          hasTransactionHash: !!challenge.transactionHash
+        }
+      }, { status: 400 });
+    }
+
+    if (!challenge.winner) {
+      return NextResponse.json({
+        error: 'Challenge has no winner address',
+        challenge: {
+          id: challenge.id,
+          status: challenge.status,
+          winner: challenge.winner
+        }
+      }, { status: 400 });
+    }
+
+    // Check if we have the private key
+    if (!PRIVATE_KEY) {
+      return NextResponse.json(
+        { error: 'Private key not configured' },
+        { status: 500 }
+      );
+    }
+
+    // For GET request, just return what would happen without actually sending transaction
+    return NextResponse.json({
+      message: 'GET request - would call setWinner for this challenge',
+      challenge: {
+        id: challenge.id,
+        status: challenge.status,
+        winner: challenge.winner,
+        transactionHash: challenge.transactionHash,
+        hasTransactionHash: !!challenge.transactionHash
+      },
+      wouldSendTransaction: {
+        to: TYPING_CHALLENGE_CONTRACT,
+        function: 'setWinner',
+        args: [challengeId, challenge.winner]
+      },
+      instructions: `To actually send transaction, use POST request to this same endpoint`
+    });
+
+  } catch (error) {
+    console.error('Error in GET set-winner:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to process GET request',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

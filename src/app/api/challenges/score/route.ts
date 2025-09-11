@@ -184,15 +184,25 @@ export async function POST(request: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
           });
           
+          console.log(`Set-winner API response status: ${setWinnerResponse.status}`);
+          
           if (setWinnerResponse.ok) {
             const result = await setWinnerResponse.json();
+            console.log(`=== SET-WINNER API RESPONSE ===`);
+            console.log(`Full result:`, JSON.stringify(result, null, 2));
+            console.log(`result.transactionHash:`, result.transactionHash);
+            console.log(`typeof result.transactionHash:`, typeof result.transactionHash);
+            
             transactionHash = result.transactionHash;
-            console.log(`Smart contract setWinner successful:`, result);
+            console.log(`Extracted transactionHash:`, transactionHash);
             
             // Update challenge with transaction hash
             if (transactionHash) {
-              await completeChallenge(challengeId, winner, transactionHash);
-              console.log(`Challenge ${challengeId} updated with transaction hash: ${transactionHash}`);
+              console.log(`Calling completeChallenge with hash: ${transactionHash}`);
+              const updatedChallenge = await completeChallenge(challengeId, winner, transactionHash);
+              console.log(`Challenge ${challengeId} updated with transaction hash:`, updatedChallenge);
+            } else {
+              console.warn(`No transaction hash received from set-winner API!`);
             }
           } else {
             const errorText = await setWinnerResponse.text();
