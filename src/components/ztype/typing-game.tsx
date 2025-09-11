@@ -577,9 +577,9 @@ export function TypingGame() {
         const en = enemies[i]
         en.y += en.speed * (dt / 1000) * dpr
 
-        // Check if the BOTTOM of the enemy has reached the ground
+        // Check if the enemy actually hits the ship area (much closer to bottom)
         // en.y is the top of the enemy, so en.y + TILE is the bottom
-        if (en.y + TILE > H - 60 * dpr) {
+        if (en.y + TILE > H - 30 * dpr) {
           enemies.splice(i, 1)
           if (targetIdRef.current === en.id) targetIdRef.current = null
           setLives((l) => {
