@@ -99,6 +99,10 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
         const response = await fetch(`/api/challenges/${challenge.id}/scores`);
         if (response.ok) {
           const data = await response.json();
+          console.log('=== DEBUG: Challenge data from API ===');
+          console.log('Full API response:', data);
+          console.log('Challenge from API:', data.challenge);
+          console.log('Transaction hash from API:', data.challenge?.transactionHash);
           setChallenge(data.challenge);
         } else {
           setError('Failed to refresh challenge data');
@@ -261,11 +265,9 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">⚔️ Typing Challenge</h1>
-          <p className="text-gray-300">Challenge</p>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">⚔️ ArbiStrike Challenge</h1>
         </div>
 
-        {/* Debug Info (remove in production) */}
         {process.env.NODE_ENV === 'development' && (
           <div className="bg-gray-900/70 backdrop-blur-sm rounded-lg p-4 mb-6 text-xs border border-gray-600">
             <h3 className="text-yellow-400 mb-2">Debug Info:</h3>
@@ -417,6 +419,21 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                       <span>View Payment Transaction</span>
                       <span className="text-xs opacity-75">↗</span>
                     </a>
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mt-2 text-xs text-gray-500 font-mono">
+                        Debug: TX Hash = {challenge.transactionHash}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {challenge.status === 'completed' && !challenge.transactionHash && process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                    <div className="text-yellow-400 text-sm font-medium mb-1">⚠️ Debug: Missing Transaction Hash</div>
+                    <div className="text-yellow-300 text-xs">
+                      Challenge is completed but no transaction hash found in database.
+                      <br />Winner: {challenge.winner}
+                      <br />Status: {challenge.status}
+                    </div>
                   </div>
                 )}
               </div>

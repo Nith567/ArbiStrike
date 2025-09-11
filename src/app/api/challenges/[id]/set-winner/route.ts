@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getChallengeById } from '~/lib/db';
+import { getChallengeById, completeChallenge } from '~/lib/db';
 import { createWalletClient, http, parseAbi, encodeFunctionData } from 'viem';
 import { arbitrum } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -97,13 +97,19 @@ export async function POST(
     console.log(`Is txHash a string?:`, typeof txHash === 'string');
     console.log(`txHash length:`, txHash?.length);
 
+
+    console.log(`Saving transaction hash to database: ${txHash}`);
+    const updatedChallenge = await completeChallenge(challengeId, challenge.winner, txHash);
+    console.log(`Challenge updated with transaction hash:`, updatedChallenge?.transactionHash);
+
     return NextResponse.json({
       success: true,
       challengeId,
       winnerAddress: challenge.winner,
       transactionHash: txHash,
       transactionHashType: typeof txHash,
-      message: 'Winner set successfully on smart contract',
+      databaseUpdated: !!updatedChallenge,
+      message: 'Winner set successfully on smart contract and saved to database',
     });
 
   } catch (error) {
