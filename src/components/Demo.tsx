@@ -76,6 +76,11 @@ export default function Demo(
   const [added, setAdded] = useState(false);
   const [notificationDetails, setNotificationDetails] = useState<MiniAppNotificationDetails | null>(null);
 
+  // Airdrop claim state
+  const [isClaimingAirdrop, setIsClaimingAirdrop] = useState(false);
+  const [airdropResult, setAirdropResult] = useState<string>("");
+  const [lastClaimTime, setLastClaimTime] = useState<number | null>(null);
+
   // Check if mini app is added and notifications are enabled using context
   const hasNotifications = notificationDetails !== undefined;
   const isAdded = added;
@@ -305,6 +310,110 @@ export default function Demo(
     );
   }, [sendTransaction]);
 
+  // Claim daily airdrop function
+  const claimAirdrop = useCallback(async () => {
+    if (!address || !isConnected) {
+      setAirdropResult("❌ Please connect your wallet first");
+      return;
+    }
+
+    // Check if user claimed in the last 24 hours
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    if (lastClaimTime && (now - lastClaimTime) < oneDayMs) {
+      const timeLeft = oneDayMs - (now - lastClaimTime);
+      const hoursLeft = Math.ceil(timeLeft / (60 * 60 * 1000));
+      setAirdropResult(`⏰ You can claim again in ${hoursLeft} hours`);
+      return;
+    }
+
+    setIsClaimingAirdrop(true);
+    setAirdropResult("🔄 Claiming your daily 0.01 USDC airdrop...");
+
+    try {
+      // Switch to Arbitrum network if needed
+      if (chainId !== arbitrum.id) {
+        setAirdropResult("🔄 Switching to Arbitrum network...");
+        await switchChain({ chainId: arbitrum.id });
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Typing Challenge contract address
+      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+
+      // Prepare claimAirdrop transaction
+      const claimData = encodeFunctionData({
+        abi: parseAbi(['function claimAirdrop(address recipient) external']),
+        functionName: 'claimAirdrop',
+        args: [address as `0x${string}`],
+      });
+
+      setAirdropResult("🔄 Sending transaction... Please confirm in your wallet");
+
+      // Send transaction
+      const txHash = await new Promise<string>((resolve, reject) => {
+        sendTransaction(
+          {
+            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
+            data: claimData,
+            value: 0n,
+          },
+          {
+            onSuccess: (hash) => {
+              resolve(hash);
+            },
+            onError: (error) => {
+              reject(error);
+            },
+          }
+        );
+      });
+
+      setAirdropResult("🔄 Transaction sent! Waiting for confirmation...");
+      
+      // Wait a bit for confirmation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Success!
+      setAirdropResult(`🎉 Success! You received 0.01 USDC airdrop!
+      
+Transaction: ${txHash.slice(0, 10)}...`);
+      
+      // Store claim time
+      setLastClaimTime(now);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastAirdropClaim', now.toString());
+      }
+
+    } catch (error: any) {
+      console.error('Airdrop claim error:', error);
+      
+      if (error?.message?.includes('User rejected') || 
+          error?.message?.includes('User denied') ||
+          error?.message?.includes('User cancelled') ||
+          error?.code === 4001) {
+        setAirdropResult("❌ Transaction cancelled by user");
+      } else if (error?.message?.includes('insufficient funds')) {
+        setAirdropResult("❌ Insufficient gas fees for transaction");
+      } else {
+        setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
+      }
+    } finally {
+      setIsClaimingAirdrop(false);
+    }
+  }, [address, isConnected, chainId, switchChain, sendTransaction, lastClaimTime]);
+
+  // Load last claim time on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lastAirdropClaim');
+      if (stored) {
+        setLastClaimTime(parseInt(stored));
+      }
+    }
+  }, []);
+
 
   const toggleContext = useCallback(() => {
     setIsContextOpen((prev) => !prev);
@@ -357,6 +466,69 @@ export default function Demo(
             Master your typing skills in epic space battles.<br/>
             <span className="text-purple-400">Compete • Earn • Dominate</span>
           </p>
+        </div>
+
+        {/* Daily Airdrop Section */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-emerald-900/40 to-green-900/20 rounded-2xl border border-emerald-500/20 backdrop-blur-sm shadow-lg">
+          {airdropResult && (
+            <div className={`mb-3 text-xs p-3 rounded-xl backdrop-blur-sm ${
+              airdropResult.includes('Success') || airdropResult.includes('🎉')
+                ? 'bg-green-900/30 border border-green-500/30 text-green-300'
+                : airdropResult.includes('hours') || airdropResult.includes('⏰')
+                  ? 'bg-yellow-900/30 border border-yellow-500/30 text-yellow-300'
+                  : airdropResult.includes('❌')
+                    ? 'bg-red-900/30 border border-red-500/30 text-red-300'
+                    : 'bg-blue-900/30 border border-blue-500/30 text-blue-300'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5">
+                  {airdropResult.includes('Success') ? '🎉' : 
+                   airdropResult.includes('hours') ? '⏰' :
+                   airdropResult.includes('❌') ? '❌' : '🔄'}
+                </span>
+                <div className="flex-1">
+                  <div className="whitespace-pre-line">{airdropResult}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <Button 
+            onClick={claimAirdrop} 
+            disabled={isClaimingAirdrop || !isConnected}
+            className={`w-full text-sm py-3 rounded-xl transition-all duration-300 ${
+              !isConnected
+                ? 'bg-gray-700/50 border border-gray-600/30 text-gray-400 cursor-not-allowed'
+                : isClaimingAirdrop
+                  ? 'bg-blue-900/50 border border-blue-500/30 text-blue-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600/80 to-green-600/80 hover:from-emerald-600 hover:to-green-600 text-white border border-emerald-500/30 hover:scale-105'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              {!isConnected ? (
+                <>
+                  <span>🔒</span>
+                  <span>Connect Wallet to Claim</span>
+                </>
+              ) : isClaimingAirdrop ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-300 border-t-transparent"></div>
+                  <span>Claiming...</span>
+                </>
+              ) : (
+                <>
+                  <span>💰</span>
+                  <span>Claim Daily 0.01 USDC</span>
+                </>
+              )}
+            </span>
+          </Button>
+          
+          {isConnected && (
+            <div className="mt-2 text-xs text-center text-gray-400">
+              🎁 Free daily airdrop • 0.01 USDC on Arbitrum
+            </div>
+          )}
         </div>
 
         {/* Challenge Section */}
@@ -1372,7 +1544,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       }
  */
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-      const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
+      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
 
       setChallengeResult('🔄 Creating challenge in ...');
 
