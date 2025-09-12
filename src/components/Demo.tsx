@@ -332,13 +332,6 @@ export default function Demo(
     setAirdropResult("🔄 Claiming your daily 0.01 USDC airdrop...");
 
     try {
-      // Switch to Arbitrum network if needed
-      if (chainId !== arbitrum.id) {
-        setAirdropResult("🔄 Switching to Arbitrum network...");
-        await switchChain({ chainId: arbitrum.id });
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
       // Typing Challenge contract address
       const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
 
