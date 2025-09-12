@@ -79,7 +79,6 @@ export default function Demo(
   // Airdrop claim state
   const [isClaimingAirdrop, setIsClaimingAirdrop] = useState(false);
   const [airdropResult, setAirdropResult] = useState<string>("");
-  const [lastClaimTime, setLastClaimTime] = useState<number | null>(null);
 
   // Check if mini app is added and notifications are enabled using context
   const hasNotifications = notificationDetails !== undefined;
@@ -312,72 +311,75 @@ export default function Demo(
   }, [sendTransaction]);
 
   // Claim daily airdrop function
-  const claimAirdrop = useCallback(() => {
+  const claimAirdrop = useCallback(async () => {
     if (!address || !isConnected) {
       setAirdropResult("❌ Please connect your wallet first");
+      return;
+    }
+
+    if (!walletClient) {
+      setAirdropResult("❌ Wallet client not available");
       return;
     }
 
     setIsClaimingAirdrop(true);
     setAirdropResult("🔄 Claiming your daily 0.01 USDC airdrop...");
 
-    // Typing Challenge contract address
-    const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+    try {
+      // Typing Challenge contract address
+      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
 
-    // Prepare claimAirdrop transaction data
-    const claimData = encodeFunctionData({
-      abi: parseAbi(['function claimAirdrop(address recipient) external']),
-      functionName: 'claimAirdrop',
-      args: [address as `0x${string}`],
-    });
+      // Prepare claimAirdrop transaction data
+      const claimData = encodeFunctionData({
+        abi: parseAbi(['function claimAirdrop(address recipient) external']),
+        functionName: 'claimAirdrop',
+        args: [address as `0x${string}`],
+      });
 
-    sendTransaction(
-      {
-        to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
-        data: claimData,
-        chainId: arbitrum.id,
-      },
-      {
-        onSuccess: (hash) => {
-          setAirdropResult(`🎉 Success! You received 0.01 USDC !...`);
-          
-          // Store claim time
-          const now = Date.now();
-          setLastClaimTime(now);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('lastAirdropClaim', now.toString());
-          }
-          setIsClaimingAirdrop(false);
-        },
-        onError: (error) => {
-          console.error('Airdrop claim error:', error);
-          
-          if (error?.message?.includes('User rejected') || 
-              error?.message?.includes('User denied') ||
-              error?.message?.includes('User cancelled') ||
-              (error as any)?.code === 4001) {
-            setAirdropResult("❌ Transaction cancelled by user");
-          } else if (error?.message?.includes('insufficient funds')) {
-            setAirdropResult("❌ Insufficient gas fees for transaction");
-          } else {
-            setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
-          }
-          setIsClaimingAirdrop(false);
-        }
+      setAirdropResult("🔄 Sending transaction... Please confirm in your wallet");
+
+      const { id } = await walletClient.sendCalls({
+        account: address as `0x${string}`,
+        chain: arbitrum,
+        calls: [
+          {
+            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
+            value: 0n,
+            data: claimData,
+          },
+        ],
+      });
+
+      setAirdropResult("🔄 Waiting for transaction confirmation...");
+      
+      const result = await walletClient.waitForCallsStatus({
+        id,
+        pollingInterval: 2000,
+      });
+      
+      if (result.status === 'success') {
+        setAirdropResult(`🎉 Success! You received 0.01 USDC airdrop!`);
+      } else {
+        throw new Error('Transaction failed or was rejected');
       }
-    );
-  }, [address, isConnected, sendTransaction]);
 
-  // Load last claim time on component mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('lastAirdropClaim');
-      if (stored) {
-        setLastClaimTime(parseInt(stored));
+    } catch (error: any) {
+      console.error('Airdrop claim error:', error);
+      
+      if (error?.message?.includes('User rejected') || 
+          error?.message?.includes('User denied') ||
+          error?.message?.includes('User cancelled') ||
+          error?.code === 4001) {
+        setAirdropResult("❌ Transaction cancelled by user");
+      } else if (error?.message?.includes('insufficient funds')) {
+        setAirdropResult("❌ Insufficient gas fees for transaction");
+      } else {
+        setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
       }
+    } finally {
+      setIsClaimingAirdrop(false);
     }
-  }, []);
-
+  }, [address, isConnected, walletClient]);
 
   const toggleContext = useCallback(() => {
     setIsContextOpen((prev) => !prev);
