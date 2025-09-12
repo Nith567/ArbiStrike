@@ -87,6 +87,7 @@ export default function Demo(
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const { data: walletClient } = useWalletClient();
 
   const {
     sendTransaction,
@@ -311,91 +312,61 @@ export default function Demo(
   }, [sendTransaction]);
 
   // Claim daily airdrop function
-  const claimAirdrop = useCallback(async () => {
+  const claimAirdrop = useCallback(() => {
     if (!address || !isConnected) {
       setAirdropResult("❌ Please connect your wallet first");
-      return;
-    }
-
-    // Check if user claimed in the last 24 hours
-    const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    
-    if (lastClaimTime && (now - lastClaimTime) < oneDayMs) {
-      const timeLeft = oneDayMs - (now - lastClaimTime);
-      const hoursLeft = Math.ceil(timeLeft / (60 * 60 * 1000));
-      setAirdropResult(`⏰ You can claim again in ${hoursLeft} hours`);
       return;
     }
 
     setIsClaimingAirdrop(true);
     setAirdropResult("🔄 Claiming your daily 0.01 USDC airdrop...");
 
-    try {
-      // Typing Challenge contract address
-      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+    // Typing Challenge contract address
+    const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
 
-      // Prepare claimAirdrop transaction
-      const claimData = encodeFunctionData({
-        abi: parseAbi(['function claimAirdrop(address recipient) external']),
-        functionName: 'claimAirdrop',
-        args: [address as `0x${string}`],
-      });
+    // Prepare claimAirdrop transaction data
+    const claimData = encodeFunctionData({
+      abi: parseAbi(['function claimAirdrop(address recipient) external']),
+      functionName: 'claimAirdrop',
+      args: [address as `0x${string}`],
+    });
 
-      setAirdropResult("🔄 Sending transaction... Please confirm in your wallet");
-
-      // Send transaction
-      const txHash = await new Promise<string>((resolve, reject) => {
-        sendTransaction(
-          {
-            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
-            data: claimData,
-            value: 0n,
-          },
-          {
-            onSuccess: (hash) => {
-              resolve(hash);
-            },
-            onError: (error) => {
-              reject(error);
-            },
+    sendTransaction(
+      {
+        to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
+        data: claimData,
+        chainId: arbitrum.id,
+      },
+      {
+        onSuccess: (hash) => {
+          setAirdropResult(`🎉 Success! You received 0.01 USDC !...`);
+          
+          // Store claim time
+          const now = Date.now();
+          setLastClaimTime(now);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastAirdropClaim', now.toString());
           }
-        );
-      });
-
-      setAirdropResult("🔄 Transaction sent! Waiting for confirmation...");
-      
-      // Wait a bit for confirmation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Success!
-      setAirdropResult(`🎉 Success! You received 0.01 USDC airdrop!
-      
-Transaction: ${txHash.slice(0, 10)}...`);
-      
-      // Store claim time
-      setLastClaimTime(now);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('lastAirdropClaim', now.toString());
+          setIsClaimingAirdrop(false);
+        },
+        onError: (error) => {
+          console.error('Airdrop claim error:', error);
+          
+          if (error?.message?.includes('User rejected') || 
+              error?.message?.includes('User denied') ||
+              error?.message?.includes('User cancelled') ||
+              (error as any)?.code === 4001) {
+            setAirdropResult("❌ Transaction cancelled by user");
+          } else if (error?.message?.includes('insufficient funds')) {
+            setAirdropResult("❌ Insufficient gas fees for transaction");
+          } else {
+            setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
+          }
+          setIsClaimingAirdrop(false);
+        }
       }
-
-    } catch (error: any) {
-      console.error('Airdrop claim error:', error);
-      
-      if (error?.message?.includes('User rejected') || 
-          error?.message?.includes('User denied') ||
-          error?.message?.includes('User cancelled') ||
-          error?.code === 4001) {
-        setAirdropResult("❌ Transaction cancelled by user");
-      } else if (error?.message?.includes('insufficient funds')) {
-        setAirdropResult("❌ Insufficient gas fees for transaction");
-      } else {
-        setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
-      }
-    } finally {
-      setIsClaimingAirdrop(false);
-    }
-  }, [address, isConnected, chainId, switchChain, sendTransaction, lastClaimTime]);
+    );
+  }, [address, isConnected, sendTransaction]);
 
   // Load last claim time on component mount
   useEffect(() => {
