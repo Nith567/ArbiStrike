@@ -579,7 +579,8 @@ export function TypingGame() {
 
         // Check if the enemy actually hits the ship area (much closer to bottom)
         // en.y is the top of the enemy, so en.y + TILE is the bottom
-        if (en.y + TILE > H - 30 * dpr) {
+        // Ship triangle top is at H - 48 - 16 = H - 64, so check when enemy bottom reaches ship top
+        if (en.y + TILE > H - 64 * dpr) {
           enemies.splice(i, 1)
           if (targetIdRef.current === en.id) targetIdRef.current = null
           setLives((l) => {
@@ -791,7 +792,6 @@ export function TypingGame() {
             <span>Lvl {level}</span>
             <span>Score {score}</span>
             <span>Lives {lives}</span>
-            <span className="hidden sm:inline">WPM {wpm}</span>
           </div>
         </div>
 
@@ -889,7 +889,6 @@ export function TypingGame() {
               
               <div className="text-sm text-slate-400">
                 Score <span className="text-slate-200">{score}</span> • Level{" "}
-                <span className="text-slate-200">{level}</span> • WPM <span className="text-slate-200">{wpm}</span>
               </div>
               <button
                 onClick={startGame}
