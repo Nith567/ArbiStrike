@@ -149,7 +149,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       await switchChain({ chainId: arbitrum.id });
 
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-      const TYPING_CHALLENGE_CONTRACT = '0xD7cFbb7628D0a4df83EFf1967B6D20581f2D4382';
+      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
 
       setAcceptResult('🔄 Preparing blockchain transactions...');
 
