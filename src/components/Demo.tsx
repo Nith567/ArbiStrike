@@ -1476,7 +1476,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
       }
  */
       const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+      const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
 
       setChallengeResult('🔄 Creating challenge in ...');
 

@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Contract addresses
-    const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+    const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
 
     // Prepare claimAirdrop transaction data
     const claimData = encodeFunctionData({
-      abi: parseAbi(['function claimAirdrop(address recipient) external']),
+      abi: parseAbi(['function claimAirdrop() external']),
       functionName: 'claimAirdrop',
-      args: [recipientAddress as `0x${string}`],
+      args: [],
     });
 
     // Send transaction from your server wallet

@@ -5,7 +5,7 @@ import { arbitrum } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 // Smart contract details
-const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
+const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
 const PRIVATE_KEY = process.env.PRIVATE_KEY_OWNER as `0x${string}`;
 
 export async function POST(
