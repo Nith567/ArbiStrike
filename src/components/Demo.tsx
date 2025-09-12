@@ -317,69 +317,35 @@ export default function Demo(
       return;
     }
 
-    if (!walletClient) {
-      setAirdropResult("❌ Wallet client not available");
-      return;
-    }
-
     setIsClaimingAirdrop(true);
     setAirdropResult("🔄 Claiming your daily 0.01 USDC airdrop...");
 
     try {
-      // Typing Challenge contract address
-      const TYPING_CHALLENGE_CONTRACT = '0x5E486ae98F6FE7C4FB064640fdEDA7D58aC13E4b';
-
-      // Prepare claimAirdrop transaction data
-      const claimData = encodeFunctionData({
-        abi: parseAbi(['function claimAirdrop(address recipient) external']),
-        functionName: 'claimAirdrop',
-        args: [address as `0x${string}`],
+      const response = await fetch('/api/claim-airdrop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientAddress: address,
+        }),
       });
 
-      setAirdropResult("🔄 Sending transaction... Please confirm in your wallet");
+      const data = await response.json();
 
-      const { id } = await walletClient.sendCalls({
-        account: address as `0x${string}`,
-        chain: arbitrum,
-        calls: [
-          {
-            to: TYPING_CHALLENGE_CONTRACT as `0x${string}`,
-            value: 0n,
-            data: claimData,
-          },
-        ],
-      });
+      if (response.ok) {
+        setAirdropResult(`🎉 Success! Airdrop claimed successfully!
 
-      setAirdropResult("🔄 Waiting for transaction confirmation...");
-      
-      const result = await walletClient.waitForCallsStatus({
-        id,
-        pollingInterval: 2000,
-      });
-      
-      if (result.status === 'success') {
-        setAirdropResult(`🎉 Success! You received 0.01 USDC airdrop!`);
+Transaction: ${data.txHash.slice(0, 10)}...`);
       } else {
-        throw new Error('Transaction failed or was rejected');
+        throw new Error(data.error || 'Airdrop failed');
       }
 
     } catch (error: any) {
       console.error('Airdrop claim error:', error);
-      
-      if (error?.message?.includes('User rejected') || 
-          error?.message?.includes('User denied') ||
-          error?.message?.includes('User cancelled') ||
-          error?.code === 4001) {
-        setAirdropResult("❌ Transaction cancelled by user");
-      } else if (error?.message?.includes('insufficient funds')) {
-        setAirdropResult("❌ Insufficient gas fees for transaction");
-      } else {
-        setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
-      }
+      setAirdropResult(`❌ Claim failed: ${error?.message || 'Unknown error'}`);
     } finally {
       setIsClaimingAirdrop(false);
     }
-  }, [address, isConnected, walletClient]);
+  }, [address, isConnected]);
 
   const toggleContext = useCallback(() => {
     setIsContextOpen((prev) => !prev);
