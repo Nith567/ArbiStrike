@@ -471,7 +471,7 @@ Transaction: ${data.txHash.slice(0, 10)}...`);
             </div>
             <h2 className="text-xl font-bold mb-2 text-white">Battle Arena</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Challenge players worldwide for USDC rewards
+              Challenge players and win USDC rewards
             </p>
             <div className="text-xs bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/30 rounded-xl p-3 backdrop-blur-sm">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -495,7 +495,7 @@ Transaction: ${data.txHash.slice(0, 10)}...`);
             </div>
             <h2 className="text-xl font-bold mb-2 text-white">Solo Arena</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Train your skills in the cosmic battlefield (DEMO game)
+              Train your skills in the Typing battlefield (practice mode)
             </p>
           </div>
           
@@ -544,7 +544,6 @@ Transaction: ${data.txHash.slice(0, 10)}...`);
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 mt-8">
-          <p>Powered by Farcaster Frames v2</p>
           <div className="flex items-center justify-center gap-4 mt-2">
             <span className="text-purple-400">⚡ Fast</span>
             <span className="text-cyan-400">🛡️ Secure</span>
@@ -556,71 +555,7 @@ Transaction: ${data.txHash.slice(0, 10)}...`);
   );
 }
 
-function ComposeCastAction() {
-  const [result, setResult] = useState<ComposeCast.Result>();
-  const compose = useCallback(async () => {
-    setResult(await sdk.actions.composeCast({
-      text: 'Hello from Demo Mini App',
-      embeds: ["https://test.com/foo%20bar"],
-    }))
-  }, []);
 
-  return (
-    <>
-      <Button
-        onClick={compose}
-      >
-        Compose Cast
-      </Button>
-      {result && (
-        <div className="mt-2 text-xs">
-          <div>Cast Hash: {result.cast?.hash}</div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function SignEthMessage() {
-  const { isConnected } = useAccount();
-  const { connectAsync } = useConnect();
-  const {
-    signMessage,
-    data: signature,
-    error: signError,
-    isError: isSignError,
-    isPending: isSignPending,
-  } = useSignMessage();
-
-  const handleSignMessage = useCallback(async () => {
-    if (!isConnected) {
-      await connectAsync({
-        chainId: base.id,
-        connector: config.connectors[0],
-      });
-    }
-
-    signMessage({ message: "Hello from Frames v2!" });
-  }, [connectAsync, isConnected, signMessage]);
-
-  return (
-    <>
-      <Button
-        onClick={handleSignMessage}
-        disabled={isSignPending}
-        isLoading={isSignPending}
-      >
-        Sign Message
-      </Button>
-      {isSignError && renderError(signError)}
-      {signature && (
-        <div className="mt-2 text-xs">
-          <div>Signature: {signature}</div>
-        </div>
-      )}
-    </>
-  );
-}
 
 function SendEth() {
   const { isConnected, chainId } = useAccount();

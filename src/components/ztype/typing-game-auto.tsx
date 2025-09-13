@@ -368,7 +368,7 @@ function TypingGameAuto() {
         updateAccuracy()
         const now = performance.now()
         const shipX = w / 2
-        const shipY = h - 24 // approx center of the ship triangle near bottom
+        const shipY = h - 20// approx center of the ship triangle near bottom
         const targetX = clamp(en.x + en.size / 2, 0, w)
         const targetY = clamp(en.y + en.size / 2, 0, h)
         setLaser({ sx: shipX, sy: shipY, tx: targetX, ty: targetY, ts: now })
