@@ -43,7 +43,7 @@ import {
 import { config } from "~/components/providers/WagmiProvider";
 import { Button } from "~/components/ui/Button";
 import { truncateAddress } from "~/lib/truncateAddress";
-import { base, degen, mainnet, monadTestnet, optimism, unichain, base } from "wagmi/chains";
+import { degen, mainnet, monadTestnet, optimism, unichain, base } from "wagmi/chains";
 import { BaseError, parseEther, UserRejectedRequestError, encodeFunctionData, parseAbi, parseUnits, formatUnits } from "viem";
 import { createStore } from "mipd";
 import { Label } from "~/components/ui/label";
