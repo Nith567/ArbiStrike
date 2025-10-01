@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, parseUnits, encodeFunctionData, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { arbitrum } from 'viem/chains';
+import { base } from 'viem/chains';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const account = privateKeyToAccount(PRIVATE_KEY as `0x${string}`);
     const walletClient = createWalletClient({
       account,
-      chain: arbitrum,
+      chain: base,
       transport: http(),
     });
 

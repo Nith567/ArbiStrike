@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAccount, useWalletClient, useSwitchChain, useConnect } from 'wagmi';
-import { arbitrum } from 'wagmi/chains';
+import { base } from 'wagmi/chains';
 import { encodeFunctionData, parseAbi, formatUnits } from 'viem';
 import sdk, { type Context } from "@farcaster/miniapp-sdk";
 import { Button } from '~/components/ui/Button';
@@ -77,7 +77,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       if (isSDKLoaded && !isConnected && config.connectors.length > 0) {
         try {
           await connect({ 
-            chainId: arbitrum.id,
+            chainId: base.id,
             connector: config.connectors[0] 
           });
         } catch (error) {
@@ -145,10 +145,10 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
     setAcceptResult('');
 
     try {
-      // Switch to Arbitrum
-      await switchChain({ chainId: arbitrum.id });
+      // Switch to base
+      await switchChain({ chainId: base.id });
 
-      const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+      const base_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
 
       setAcceptResult('🔄 Preparing blockchain transactions...');
@@ -172,10 +172,10 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       // Send batch transaction FIRST
       const { id } = await walletClient.sendCalls({
         account: address as `0x${string}`,
-        chain: arbitrum,
+        chain: base,
         calls: [
           {
-            to: ARBITRUM_USDC as `0x${string}`,
+            to: base_USDC as `0x${string}`,
             value: 0n,
             data: approveData,
           },
@@ -410,7 +410,7 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
                       {(parseInt(challenge.betAmount) / 1000000).toFixed(6)} USDC
                     </div>
                     <a
-                      href={`http://arbitrum.blockscout.com/tx/${challenge.transactionHash}`}
+                      href={`http://base.blockscout.com/tx/${challenge.transactionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-sm"

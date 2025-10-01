@@ -5,7 +5,7 @@ import { Providers } from "~/app/providers";
 
 export const metadata: Metadata = {
   title: "ArbiStrike",
-  description: "ArbiStrike - Bet with friends to Earn on Arbitrum",
+  description: "ArbiStrike - Bet with friends to Earn on base",
   metadataBase: new URL(process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'),
 };
 

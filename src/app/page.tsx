@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "ArbiStrike",
     openGraph: {
       title: "ArbiStrike",
-      description: "ArbiStrike - Bet with friends to Earn on Arbitrum",
+      description: "ArbiStrike - Bet with friends to Earn on base",
     },
     other: {
       "fc:frame": JSON.stringify(frame),

@@ -43,7 +43,7 @@ import {
 import { config } from "~/components/providers/WagmiProvider";
 import { Button } from "~/components/ui/Button";
 import { truncateAddress } from "~/lib/truncateAddress";
-import { base, degen, mainnet, monadTestnet, optimism, unichain, arbitrum } from "wagmi/chains";
+import { base, degen, mainnet, monadTestnet, optimism, unichain, base } from "wagmi/chains";
 import { BaseError, parseEther, UserRejectedRequestError, encodeFunctionData, parseAbi, parseUnits, formatUnits } from "viem";
 import { createStore } from "mipd";
 import { Label } from "~/components/ui/label";
@@ -211,7 +211,7 @@ export default function Demo(
       if (isSDKLoaded && !isConnected && config.connectors.length > 0) {
         try {
           await connect({ 
-            chainId: arbitrum.id,
+            chainId: base.id,
             connector: config.connectors[0] 
           });
         } catch (error) {
@@ -458,7 +458,7 @@ Transaction: ${data.txHash.slice(0, 10)}...`);
           
           {isConnected && (
             <div className="mt-2 text-xs text-center text-gray-400">
-              🎁 Free daily airdrop • 0.01 USDC on Arbitrum
+              🎁 Free daily airdrop • 0.01 USDC on base
             </div>
           )}
         </div>
@@ -1396,21 +1396,21 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         throw new Error('Wallet client is still loading. Please wait a moment and try again.');
       }
 
-      setChallengeResult('🔄 Switching to Arbitrum network...');
+      setChallengeResult('🔄 Switching to base network...');
       
-/*       // Switch to Arbitrum (chain ID 42161) with proper error handling
+/*       // Switch to base (chain ID 42161) with proper error handling
       try {
-        await switchChain({ chainId: arbitrum.id });
+        await switchChain({ chainId: base.id });
         // Give the network switch a moment to complete
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (switchError: any) {
         if (switchError?.message?.includes('User rejected')) {
           throw new Error('Network switch was cancelled. Please approve the network switch to continue.');
         }
-        throw new Error(`Failed to switch to Arbitrum network: ${switchError?.message || 'Unknown error'}`);
+        throw new Error(`Failed to switch to base network: ${switchError?.message || 'Unknown error'}`);
       }
  */
-      const ARBITRUM_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+      const base_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
       const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
 
       setChallengeResult('🔄 Creating challenge in ...');
@@ -1483,10 +1483,10 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         const txResult = await Promise.race([
           walletClient.sendCalls({
             account: address as `0x${string}`,
-            chain: arbitrum,
+            chain: base,
             calls: [
               {
-                to: ARBITRUM_USDC as `0x${string}`,
+                to: base_USDC as `0x${string}`,
                 value: 0n,
                 data: approveData,
               },
@@ -1515,7 +1515,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         
         if (txError?.message?.includes('insufficient funds') || 
             txError?.message?.includes('insufficient balance')) {
-          throw new Error(`Insufficient USDC balance. You need at least ${betAmount} USDC on Arbitrum.`);
+          throw new Error(`Insufficient USDC balance. You need at least ${betAmount} USDC on base.`);
         }
         
         if (txError?.message?.includes('timeout')) {
@@ -1636,7 +1636,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
         </div>
         <div className="text-xs text-gray-400 flex items-center gap-2">
           <span>💎</span>
-          <span>Betting: {betAmount} USDC on Arbitrum</span>
+          <span>Betting: {betAmount} USDC on base</span>
         </div>
       </div>
 
@@ -1808,7 +1808,7 @@ function CreateChallenge({ context, address }: { context?: Context.MiniAppContex
               {challengeResult.includes('insufficient') && (
                 <div className="mt-3 p-3 bg-orange-900/30 border border-orange-500/30 rounded-lg">
                   <div className="text-orange-300 text-xs">
-                    💡 <strong>Need USDC?</strong> You can get USDC on Arbitrum through a bridge or DEX like Uniswap.
+                    💡 <strong>Need USDC?</strong> You can get USDC on base through a bridge or DEX like Uniswap.
                   </div>
                 </div>
               )}

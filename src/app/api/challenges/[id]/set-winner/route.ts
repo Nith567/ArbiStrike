@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChallengeById, completeChallenge } from '~/lib/db';
 import { createWalletClient, http, parseAbi, encodeFunctionData } from 'viem';
-import { arbitrum } from 'viem/chains';
+import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 // Smart contract details
@@ -70,7 +70,7 @@ export async function POST(
     const account = privateKeyToAccount(PRIVATE_KEY);
     const walletClient = createWalletClient({
       account,
-      chain: arbitrum,
+      chain: base,
       transport: http(),
     });
 
