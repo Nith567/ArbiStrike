@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Contract addresses
-    const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
+    const TYPING_CHALLENGE_CONTRACT = '0xBACa4C4EC8E63c306D57432bC647d9A84C50a70F';
 
     // Prepare claimAirdrop transaction data
     const claimData = encodeFunctionData({

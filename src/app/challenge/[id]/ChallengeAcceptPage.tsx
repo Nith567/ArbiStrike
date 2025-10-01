@@ -148,8 +148,8 @@ export default function ChallengeAcceptPage({ challenge: initialChallenge }: Cha
       // Switch to base
       await switchChain({ chainId: base.id });
 
-      const base_USDC = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-      const TYPING_CHALLENGE_CONTRACT = '0xdD3696dCb26A6E328EB3083536A2Cf3e9020F6f1';
+      const base_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+      const TYPING_CHALLENGE_CONTRACT = '0xBACa4C4EC8E63c306D57432bC647d9A84C50a70F';
 
       setAcceptResult('🔄 Preparing blockchain transactions...');
 
